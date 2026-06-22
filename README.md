@@ -1,11 +1,15 @@
 # Portfolio-Visualisierung
 
-Lokale Web-Anwendung zur Visualisierung eines Investment-Portfolios.
+Lokale Web-Anwendung zur Visualisierung eines Investment-Portfolios.  
 Vergleich zwischen SOLL (Zielportfolio) und IST (reales Portfolio).
 
 ## Ziel
 
 Rein deskriptive Differenzanalyse ohne Rebalancing-, Optimierungs- oder Handlungsempfehlungen.
+
+## Zielgruppe
+
+Privatanleger, tech-versiert, aber nicht Designer. Einzelnutzer, lokal auf eigenem Rechner.
 
 ## Features (geplant)
 
@@ -18,23 +22,31 @@ Rein deskriptive Differenzanalyse ohne Rebalancing-, Optimierungs- oder Handlung
 
 ## Projektphasen
 
-- [x] Phase 1: UX-Entscheidungen
+- [x] Phase 1: Fachliche Spezifikation
+- [x] Phase 2: UX-Entscheidungen (2/2)
   - [x] Parent vs Child Darstellung
   - [x] Bewertungsdarstellung (zwei Systeme)
-- [ ] Phase 2: Architektur-Entscheidungen
-- [ ] Phase 3: Tech-Stack-Entscheidungen
-- [ ] Phase 4: Implementierung
+- [ ] Phase 3: Architektur-Entscheidungen
+- [ ] Phase 4: Tech-Stack-Entscheidungen
+- [ ] Phase 5: Datenmodell konkretisieren
+- [ ] Phase 6: Komponenten-Design
+- [ ] Phase 7: Implementierung
 
 ## Dokumentation
 
-- [Anforderungen](docs/01-anforderungen.md)
-- [UX-Entscheidungen](docs/02-ux-entscheidungen.md)
-- [Bewertungsdarstellung (UX-Spezifikation)](docs/03-bewertungsdarstellung.md)
+- [Projektgedächtnis](docs/00-projektgedachtnis.md) — Status & Entscheidungshistorie
+- [Anforderungen](docs/01-anforderungen.md) — Fachliche Spezifikation
+- [UX-Entscheidungen](docs/02-ux-entscheidungen.md) — Parent vs Child
+- [Bewertungsdarstellung](docs/03-bewertungsdarstellung.md) — UX-Spezifikation
 - [Architektur](docs/04-architektur.md) — TBD
 - [Tech-Stack](docs/05-tech-stack.md) — TBD
 - [Datenmodell](docs/06-datenmodell.md) — TBD
-- [Entscheidungsprotokoll](docs/entscheidungsprotokoll.md)
+- [Entscheidungsprotokoll](docs/entscheidungsprotokoll.md) — Alle Entscheidungen
 
 ## Status
 
-**Aktuelle Phase:** ✅ UX abgeschlossen → Phase 2: Architektur
+**Aktuelle Phase:** ✅ UX abgeschlossen → Phase 3: Architektur-Entscheidungen
+
+**Letzter Commit:** `docs: Projektgedächtnis mit vollständiger Basis-Information integriert`
+
+**GitHub:** https://github.com/Platzmangel/portfolio-visualizer
