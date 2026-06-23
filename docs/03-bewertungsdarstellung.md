@@ -2,7 +2,7 @@
 
 ## Überblick: Zwei orthogonale Statussysteme
 
-Die Bewertungsdarstellung basiert auf zwei fundamentally unabhängigen Statussystemen, die kontextgebunden in verschiedenen Ansichten dargestellt werden:
+Die Bewertungsdarstellung basiert auf zwei fundamental unabhängigen Statussystemen, die kontextgebunden in verschiedenen Ansichten dargestellt werden:
 
 1. **Freeness-Status** (SOLL-Modellierungs-Ansicht)
 2. **SOLL/IST-Vergleichsstatus** (Vergleichs-Ansicht)

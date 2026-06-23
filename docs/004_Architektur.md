@@ -1,3 +1,0 @@
-# Architektur
-
-[TBD]
