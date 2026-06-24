@@ -26,20 +26,20 @@
 
 ## Bewertungskategorien
 
-### Freeness-Status (Zielstruktur-Konsistenz, nur SOLL)
-- `correct`: Summe Kinder-SOLL = Parent-SOLL
-- `free`: Summe Kinder-SOLL < Parent-SOLL (unvollständig, aber zulässig)
-- `overallocated`: Summe Kinder-SOLL > Parent-SOLL (Fehlerzustand)
-
 ### SOLL/IST-Vergleichsstatus (Portfolio-Abweichung)
 - `correct`: IST ≈ SOLL (Abweichung = 0%)
 - `underweighted`: IST < SOLL (zu wenig)
 - `overweighted`: IST > SOLL (zu viel)
 - `missing_in_ist`: SOLL vorhanden, kein IST (nicht bespielt)
 
+### Freeness-Status (Zielstruktur-Konsistenz, nur SOLL)
+- `correct`: Summe Kinder-SOLL = Parent-SOLL
+- `free`: Summe Kinder-SOLL < Parent-SOLL (unvollständig, aber zulässig)
+- `overallocated`: Summe Kinder-SOLL > Parent-SOLL (Fehlerzustand)
+
 ## Nicht-Ziele
 
-- Keine Rebalancing-Logik
-- Keine Kauf-/Verkaufsvorschläge
+- noch keine Rebalancing-Logik
+- noch keine Kauf-/Verkaufsvorschläge
 - Keine Simulationen
 - Keine Compliance-Anforderungen
