@@ -52,11 +52,11 @@ Parent und Child werden optisch gleich dargestellt (kein visueller Unterschied).
 - Gelb: missing_in_soll
 
 #### Option 2: Icons + Text
-- ✓ correct
-- ↑ overweighted
-- ↓ underweighted
-- ⊘ missing_in_ist
-- ⊕ missing_in_soll
+- correct
+- overweighted
+- underweighted
+- missing_in_ist
+- missing_in_soll
 
 #### Option 3: Tooltip + Hover
 - Neutral Farben, Details nur bei Hover
