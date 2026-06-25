@@ -153,8 +153,8 @@ docs/
 ├── 04-architektur.md (TBD)
 ├── 05-tech-stack.md (TBD)
 ├── 06-datenmodell.md (TBD)
-└── entscheidungsprotokoll.md (Entscheidungshistorie)
-```
+├── 07_Entscheidungsprotokoll.md (Entscheidungshistorie)
+└── 08_noch einzupflegen.md
 
 ### Nächste Meilensteine (Phasen)
 1. ✅ Phase 1: Fachliche Spezifikation

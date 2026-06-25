@@ -27,7 +27,7 @@ Parent und Child werden optisch gleich dargestellt (kein visueller Unterschied).
 
 ---
 
-## ⏳ OFFEN: Bewertungsdarstellung
+## OFFEN: Bewertungsdarstellung
 
 **Frage:** Wie sollen die 6 Bewertungskategorien in Tree und Sunburst dargestellt werden?
 

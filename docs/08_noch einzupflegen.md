@@ -25,24 +25,3 @@ Layer-based (Schichten: /components, /hooks, /utils, /types)	SOLL/IST/Compare li
 JavaScript (ohne TypeScript)	Keine Typ-Sicherheit (Fehler erst beim Start, nicht vorher), kein Autocomplete für Types, Wartbarkeit schlechter bei großen Projekten. TypeScript ist Industriestandard.
 Context API (in React enthalten)	Performance-Probleme: Wenn sich State ändert, re-rendert alle Components, die Context nutzen → bei Portfolio-State kritisch. Kein Selektor (kann nicht gezielt nur Teil lesen).
 Recharts (React-Native D3-Alternative)	Kein native Sunburst, nur einfache Tree-Maps, weniger Flexibilität (Vordefinierte Chart-Types), bewährt aus Vorgängerprojekt ist D3.
-4. Nächste Schritte (Phase 3 fortsetzen)
-
-    MVP-Definition Release 1.0: Welches Minimum macht noch sinnvoll nutzbar? (Anzeige-only vs. Anzeige+Eingabe vs. Anzeige+Eingabe+Drag&Drop)
-
-    Phase 4: Konkrete Dependency-Versionen (Node.js 24.x LTS, React 19, Vite 5, TypeScript 5, Zustand 4, D3 7)
-
-    Phase 5: TypeScript Interfaces für Node, Tree, SOLL/IST, Status
-
-5. Wissensstand Master LLM
-
-    Technik-Stack komplett fest: React + Vite + TypeScript + D3 + Zustand
-
-    Architektur fest: Feature-based (/features/soll, /features/ist, /features/compare)
-
-    State-Management fest: Zustand (separate Stores für SOLL/IST/Compare)
-
-    Nächste Entscheidung: MVP-Boundary für Release 1.0
-
-    Priorität: Klarheit & Wartbarkeit vor Optimierung
-
-    Arbeitsweise: Entscheidung für Entscheidung, mit expliziter Bestätigung vor dem nächsten Schritt

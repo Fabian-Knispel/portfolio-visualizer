@@ -74,7 +74,7 @@ Die bestehenden SOLL/IST/Vergleich-Tabs steuern direkt, welcher Statuskontext si
 
 ## Orthogonalität der Systeme
 
-Die beiden Statussysteme sind **fundamentally unabhängig**:
+Die beiden Statussysteme sind **fundamental unabhängig**:
 
 - Ein Knoten kann gleichzeitig `free` (Modellstatus) UND `overweighted` (SOLL/IST-Status) sein
 - Diese Zustände widersprechen sich nicht
