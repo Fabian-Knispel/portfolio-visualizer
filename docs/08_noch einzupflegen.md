@@ -25,3 +25,20 @@ Layer-based (Schichten: /components, /hooks, /utils, /types)	SOLL/IST/Compare li
 JavaScript (ohne TypeScript)	Keine Typ-Sicherheit (Fehler erst beim Start, nicht vorher), kein Autocomplete für Types, Wartbarkeit schlechter bei großen Projekten. TypeScript ist Industriestandard.
 Context API (in React enthalten)	Performance-Probleme: Wenn sich State ändert, re-rendert alle Components, die Context nutzen → bei Portfolio-State kritisch. Kein Selektor (kann nicht gezielt nur Teil lesen).
 Recharts (React-Native D3-Alternative)	Kein native Sunburst, nur einfache Tree-Maps, weniger Flexibilität (Vordefinierte Chart-Types), bewährt aus Vorgängerprojekt ist D3.
+
+Klickbare Entscheidungen
+
+✅ Betriebsform: Lokale Web-App mit Build-Step
+✅ Frontend-Framework: React
+✅ Build-Tool: Vite
+✅ Sprache: TypeScript
+✅ Visualisierung: D3.js
+✅ Architektur-Stil: Feature-based
+✅ State-Management: Zustand
+
+🔜 Nächste Entscheidung: MVP-Definition (Release 1.0)
+
+Datum: Wednesday, June 24, 2026
+Status: Phase 3 teilweise abgeschlossen (Architektur + State entschieden)
+Priorität: Klarheit & Wartbarkeit vor Optimierung
+Arbeitsweise: Entscheidung für Entscheidung, explizite Bestätigung vor nächster Entscheidung
