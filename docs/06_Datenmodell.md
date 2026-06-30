@@ -99,6 +99,12 @@ export function computeCompareStatus(
   sollTargetPct: number,
   istPct: number
 ): CompareResult;
+
+export function moveNodeInTree<TNode extends PortfolioNodeBase<TNode>>(
+  root: TNode,
+  path: NodePath,
+  newParentPath: NodePath
+): TNode;
 ```
 
 ## 5. Beispieldaten
@@ -150,6 +156,8 @@ UI-Zustand wird nicht gespeichert, sondern beim Laden aus den fachlichen Daten n
 - Fachliche Mutationen (`SOLL` und `IST`) wie Hinzufügen, Entfernen oder Aktualisieren lösen unmittelbar einen erneuten Speicherlauf aus.
 - Eine abgeleitete UI-Schicht darf nur auf den Store reagieren; sie speichert selbst keine eigenen Kopien der fachlichen Daten.
 - Pfadbasierte Tree-Operationen dürfen nur auf `sollRoot` bzw. `istRoot` angewendet werden und müssen die Hierarchie strukturell unverändert lassen, außer an der explizit adressierten Stelle.
+- Pfadbasierte Tree-Operationen umfassen `add`, `update`, `move` und `remove`; beim `move` bleibt die Knotenidentität erhalten, der Parent-Wechsel wird nur strukturell abgebildet.
+- Der technische Root-Knoten ist fest und nicht löschbar; seine Beschriftung darf geändert werden.
 
 ## Status
 

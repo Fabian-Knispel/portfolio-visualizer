@@ -1,11 +1,11 @@
 # Projektgedächtnis: Portfolio-Visualisierung
 
 ## Aktuelle Projektphase
-**Phase: Architektur- und Tech-Stack-Entscheidungen konsolidiert, MVP-Definition offen**
+**Phase: Komponenten-Design und UI-Sockel in Umsetzung**
 
-*(Fortschritt: 4 von 7 Phasen abgeschlossen)*
+*(Fortschritt: 6 von 7 Phasen angestoßen, davon 1 bereits sichtbar umgesetzt)*
 
-**Begründung:** Fachliche Modellierung und UX-Entscheidungen sind abgeschlossen. Architektur- und Tech-Stack-Entscheidungen wurden getroffen (siehe Entscheidungsprotokoll) und müssen nun in den normativen Dokumenten konsolidiert umgesetzt werden. Nächster inhaltlicher Fokus ist die MVP-Definition und anschließende Datenmodell-/Komponenten-Konkretisierung.
+**Begründung:** Fachliche Modellierung, UX-Entscheidungen sowie Architektur- und Tech-Stack-Entscheidungen sind dokumentiert. Der nächste Fokus liegt jetzt auf der komponentenbasierten Umsetzung des Seitenbereichs und der Baumansicht auf Basis des bestehenden Datenmodells.
 
 ---
 
@@ -145,8 +145,8 @@
 ## Meta-Informationen zum Projektstatus
 
 ### Implementierungsstand
-- **Code:** Keine Implementierung bisher
-- **Dokumentation:** Fachlich + UX vollständig; Architektur/Tech-Stack entschieden, Konsolidierung in den normativen Dokus läuft
+- **Code:** React/Vite-App-Sockel und Seitenbereich-Editor sind umgesetzt
+- **Dokumentation:** Fachlich + UX vollständig; Architektur/Tech-Stack entschieden, Konsolidierung in den normativen Dokus ist weitgehend abgeschlossen
 - **Repository:** https://github.com/Fabian-Knispel/portfolio-visualizer
 
 ### Technologie-Stack
@@ -177,8 +177,8 @@ docs/
 2. ✅ Phase 2: UX-Entscheidungen (2/2 getroffen)
 3. ✅ Phase 3: Architektur-Entscheidungen (getroffen)
 4. ✅ Phase 4: Tech-Stack-Entscheidungen (getroffen)
-5. [ ] Phase 5: Datenmodell konkretisieren (TypeScript)
-6. [ ] Phase 6: Komponenten-Design
+5. [x] Phase 5: Datenmodell konkretisieren (TypeScript)
+6. [~] Phase 6: Komponenten-Design
 7. [ ] Phase 7: Implementierung
 
 ---

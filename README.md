@@ -29,8 +29,19 @@ Privatanleger, tech-versiert, aber nicht Designer. Einzelnutzer, lokal auf eigen
 - [x] Phase 3: Architektur-Entscheidungen
 - [x] Phase 4: Tech-Stack-Entscheidungen
 - [x] Phase 5: Datenmodell konkretisieren
-- [ ] Phase 6: Komponenten-Design
+- [~] Phase 6: Komponenten-Design und UI-Sockel
 - [ ] Phase 7: Implementierung
+
+## Starten
+
+```bash
+npm install
+npm run dev
+```
+
+## Aktueller Stand
+
+Das Projekt enthält jetzt einen React/Vite-Sockel mit Seitenbereich für die manuelle Pflege von SOLL- und IST-Knoten. Der Root-Knoten ist fest, kann umbenannt werden und bleibt vor dem Löschen geschützt.
 
 ## Dokumentation
 
@@ -54,6 +65,6 @@ Privatanleger, tech-versiert, aber nicht Designer. Einzelnutzer, lokal auf eigen
 
 ## Status
 
-**Aktuelle Phase:** ✅ Phase 5 abgeschlossen → nächster Schritt: **Phase 6 (Komponenten-Design)** starten.
+**Aktuelle Phase:** ✅ Phase 5 abgeschlossen → Phase 6 (Komponenten-Design und UI-Sockel) ist in Umsetzung.
 
 **Repository:** https://github.com/Fabian-Knispel/portfolio-visualizer

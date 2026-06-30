@@ -99,6 +99,26 @@ export function isRootNodePath(path: NodePath): boolean {
   return path === ROOT_NODE_PATH;
 }
 
+function findNodeInTree<TNode extends PortfolioNodeBase<TNode>>(root: TNode, path: NodePath): TNode | null {
+  if (root.path === path) {
+    return root;
+  }
+
+  for (const child of root.children) {
+    const foundNode = findNodeInTree(child, path);
+
+    if (foundNode !== null) {
+      return foundNode;
+    }
+  }
+
+  return null;
+}
+
+function isPathInsideSubtree(rootPath: NodePath, candidatePath: NodePath): boolean {
+  return candidatePath === rootPath || candidatePath.startsWith(`${rootPath}/`);
+}
+
 export function updateNodeInTree<TNode extends PortfolioNodeBase<TNode>>(
   root: TNode,
   path: NodePath,
@@ -149,6 +169,26 @@ export function appendNodeToTree<TNode extends PortfolioNodeBase<TNode>>(
     ...root,
     children: root.children.map((child) => appendNodeToTree(child, parentPath, childNode)),
   };
+}
+
+export function moveNodeInTree<TNode extends PortfolioNodeBase<TNode>>(
+  root: TNode,
+  path: NodePath,
+  newParentPath: NodePath
+): TNode {
+  if (isRootNodePath(path) || path === newParentPath || isPathInsideSubtree(path, newParentPath)) {
+    return root;
+  }
+
+  const nodeToMove = findNodeInTree(root, path);
+
+  if (nodeToMove === null || findNodeInTree(root, newParentPath) === null) {
+    return root;
+  }
+
+  const treeWithoutNode = removeNodeFromTree(root, path);
+
+  return appendNodeToTree(treeWithoutNode, newParentPath, nodeToMove);
 }
 
 export function computeIstNodeValues(root: IstNode): IstComputedNode {

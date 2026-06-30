@@ -3,6 +3,7 @@ import {
   NodePath,
   SollNode,
   appendNodeToTree,
+  moveNodeInTree,
   removeNodeFromTree,
   updateNodeInTree,
 } from '../domain/portfolio-model';
@@ -29,6 +30,8 @@ export interface PortfolioStore {
   updateIstNode(path: NodePath, updater: (node: IstNode) => IstNode): PortfolioStoreSnapshot;
   appendSollNode(parentPath: NodePath, childNode: SollNode): PortfolioStoreSnapshot;
   appendIstNode(parentPath: NodePath, childNode: IstNode): PortfolioStoreSnapshot;
+  moveSollNode(path: NodePath, newParentPath: NodePath): PortfolioStoreSnapshot;
+  moveIstNode(path: NodePath, newParentPath: NodePath): PortfolioStoreSnapshot;
   removeSollNode(path: NodePath): PortfolioStoreSnapshot;
   removeIstNode(path: NodePath): PortfolioStoreSnapshot;
   replaceState(state: PortfolioStorageState): PortfolioStoreSnapshot;
@@ -154,6 +157,28 @@ export function createPortfolioStore(
       return setCurrentState({
         ...currentState,
         istRoot: appendNodeToTree(currentState.istRoot, parentPath, childNode),
+      });
+    },
+
+    moveSollNode(path: NodePath, newParentPath: NodePath) {
+      if (currentState.sollRoot === null) {
+        return emit();
+      }
+
+      return setCurrentState({
+        ...currentState,
+        sollRoot: moveNodeInTree(currentState.sollRoot, path, newParentPath),
+      });
+    },
+
+    moveIstNode(path: NodePath, newParentPath: NodePath) {
+      if (currentState.istRoot === null) {
+        return emit();
+      }
+
+      return setCurrentState({
+        ...currentState,
+        istRoot: moveNodeInTree(currentState.istRoot, path, newParentPath),
       });
     },
 
