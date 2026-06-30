@@ -1,133 +1,132 @@
 # Datenmodell
 
-✅ Konkretisierung (Stand: nach Tech-Stack-/Architektur-Entscheidungen)
+✅ Konkretisiert (Stand: 2026-06-30)
 
-Die Modellierung bleibt fachlich strikt zwischen SOLL und IST getrennt.
-Die unten definierten Typen und Signaturen sind auf den beschlossenen Stack (React + TypeScript + Zustand + D3) ausgelegt.
-1. Modellprinzipien
-1.1 Knotenidentität
+Das zentrale Modell liegt feature-nah unter [src/features/portfolio/domain/portfolio-model.ts](../src/features/portfolio/domain/portfolio-model.ts).
+Es bildet SOLL und IST strikt getrennt ab, verwendet einen festen Root-Pfad `root` und hält berechnete Felder explizit von Rohdaten getrennt.
 
-    Ein Knoten ist über seinen vollständigen Pfad eindeutig identifiziert.
-    IDs sind stabil und dienen als Join-Basis zwischen SOLL und IST.
+## 1. Modellprinzipien
 
-1.2 SOLL/IST-Trennung
+### 1.1 Knotenidentität
 
-    SOLL und IST werden getrennt erfasst und verarbeitet.
-    Vergleichslogik entsteht erst in dedizierten Ableitungsfunktionen.
+Ein Knoten ist über seinen vollständigen Pfad eindeutig identifiziert.
+Der Pfad ist stabil und dient als Join-Basis zwischen SOLL und IST.
 
-1.3 SOLL-Freeness als Diagnose
+### 1.2 SOLL/IST-Trennung
 
-    Keine harte Eingabeblockade, keine automatische Korrektur.
-    Freeness bewertet Strukturqualität (correct / free / overallocated) diagnostisch.
-2. TypeScript-Datentypen (Vorschlag für Start)
+SOLL und IST werden getrennt erfasst und verarbeitet.
+Vergleichslogik entsteht erst in dedizierten Ableitungsfunktionen.
 
-export type NodePath = string; // z.B. "root/Equity/USA"
+### 1.3 SOLL-Freeness als Diagnose
 
-export interface PortfolioNodeBase {
+Keine harte Eingabeblockade, keine automatische Korrektur.
+Freeness bewertet Strukturqualität (`correct` / `free` / `overallocated`) diagnostisch.
+
+## 2. Zentrale Typen
+
+```ts
+export type NodePath = string;
+
+export const ROOT_NODE_PATH = 'root' as const;
+export const UNCATEGORIZED_NODE_LABEL = 'uncategorized' as const;
+export const UNCATEGORIZED_NODE_PATH = `${ROOT_NODE_PATH}/${UNCATEGORIZED_NODE_LABEL}` as const;
+
+export interface PortfolioNodeBase<TChild> {
   path: NodePath;
   label: string;
-  children: PortfolioNodeBase[];
+  children: TChild[];
 }
 
-export interface SollNode extends PortfolioNodeBase {
-  targetPct?: number; // lokale Zielannotation, optional
+export interface SollNode extends PortfolioNodeBase<SollNode> {
+  targetPct?: number;
 }
 
-export interface IstNode extends PortfolioNodeBase {
-  ownValue?: number;   // direkt zugeordneter Wert
+export interface IstNode extends PortfolioNodeBase<IstNode> {
+  ownValue?: number;
 }
 
-export interface IstComputedNode extends IstNode {
-  nodeValue: number;     // ownValue + Summe(children.nodeValue)
-  pct: number;           // nodeValue / totalValue
-  pctOfParent?: number;  // nodeValue / parent.nodeValue (nur Anzeige)
+export interface IstComputedNode extends PortfolioNodeBase<IstComputedNode> {
+  ownValue?: number;
+  nodeValue: number;
+  pctTotal: number;
+  pctOfParent?: number;
+}
+```
 
-Begründung
+### 2.1 Konventionen
 
-    path als Primäridentität passt zur bereits definierten Fachregel.
-    Optionale Felder (targetPct?, ownValue?) erlauben unvollständige Eingaben ohne künstliche Defaults.
-    IstComputedNode trennt Rohdaten von berechneten Feldern (klarere Datenflüsse, bessere Testbarkeit).
+- `root` ist der feste technische Root-Pfad.
+- `uncategorized` ist der technische IST-Knoten für nicht zuordenbare Werte.
+- `targetPct?` und `ownValue?` sind absichtlich optional, damit unvollständige Eingaben importierbar bleiben.
+- `pctTotal` und `pctOfParent` sind berechnete Felder, keine Eingabefelder.
 
-    3. Status-Typen (final konsolidiert)
-ts
+## 3. Status- und Result-Typen
 
+```ts
 export type FreenessStatus = 'correct' | 'free' | 'overallocated';
 
-export type CompareStatus =
-  | 'correct'
-  | 'underweighted'
-  | 'overweighted'
-  | 'missing_in_ist';
-
-Begründung
-
-    Entspricht der finalen Bewertungsdarstellung aus docs/03_Bewertungsdarstellung.md.
-    Vermeidet Synonym-Dopplungen wie extra_in_ist vs missing_in_soll im Implementierungskern.
-
-4. Vergleichs- und Berechnungsobjekte
-ts
+export type CompareStatus = 'correct' | 'underweighted' | 'overweighted' | 'missing_in_ist';
 
 export interface CompareResult {
   path: NodePath;
-  sollTargetPct: number; // 0 falls nicht gesetzt/fehlend
-  istPct: number;        // 0 falls nicht vorhanden
-  deltaPctPoints: number; // istPct - sollTargetPct (in Prozentpunkten)
+  sollTargetPct: number;
+  istPct: number;
+  deltaPctPoints: number;
   status: CompareStatus;
 }
 
 export interface FreenessResult {
   path: NodePath;
-  parentTargetPct: number;    // lokaler Parent-SOLL
+  parentTargetPct: number;
   childrenTargetSumPct: number;
   status: FreenessStatus;
 }
+```
 
-Begründung
+## 4. Funktions-Signaturen
 
-    Explizite Result-Typen entkoppeln Fachlogik von UI-Komponenten.
-    deltaPctPoints als dedizierter Wert reduziert Mehrdeutigkeiten in Tooltip/Legende.
-
-5. Funktions-Signaturen (fachlogisch)
-ts
+```ts
+export function buildNodePath(...segments: string[]): NodePath;
+export function isRootNodePath(path: NodePath): boolean;
 
 export function computeIstNodeValues(root: IstNode): IstComputedNode;
 export function computeIstPercentages(root: IstComputedNode): IstComputedNode;
 
 export function computeFreenessStatus(node: SollNode): FreenessResult | null;
-// null für Blätter (kein Freeness-Kontext)
 
 export function computeCompareStatus(
   path: NodePath,
   sollTargetPct: number,
   istPct: number
 ): CompareResult;
+```
 
-Begründung
+## 5. Beispieldaten
 
-    Kleine, getrennte Funktionen sind einfacher testbar und besser mit Zustand-Selektoren kombinierbar.
-    null bei Blättern bildet die UX-Regel („Freeness nur bei Knoten mit Kindern“) sauber ab.
+Die Datei [src/features/portfolio/domain/portfolio-model.ts](../src/features/portfolio/domain/portfolio-model.ts) enthält eine Beispielhierarchie für SOLL und IST mit mindestens 3 Ebenen.
 
-6. State-Schnitt (Zustand-kompatibel, Vorschlag)
-ts
+Beispielpfade:
 
-export interface PortfolioState {
-  sollRoot: SollNode | null;
-  istRoot: IstNode | null;
-  activeViewMode: 'soll' | 'ist' | 'vergleich';
-}
+- `root`
+- `root/Equity`
+- `root/Equity/USA`
+- `root/Equity/USA/Large Cap`
+- `root/Bonds/Government/Short Duration`
 
-Begründung
+## 6. Selbsttest
 
-    activeViewMode ist gemäß UX-Spezifikation global synchronisiert (Tree + Sunburst).
-    SOLL/IST als getrennte Root-States halten Domänengrenzen klar.
+Beim Selbsttest wird die Beispielhierarchie auf drei Punkte geprüft:
 
-7. Offene Modellierungsdetails (für nächste Iteration)
+1. Alle Beispielknoten haben einen vollständigen Pfad ab `root`.
+2. Die IST-Hierarchie kann mit `computeIstNodeValues` und `computeIstPercentages` berechnet werden.
+3. Die SOLL-Hierarchie liefert für interne Knoten einen Freeness-Status und für Blätter `null`.
 
-    Rundungsregeln für Prozentdarstellung (UI vs intern)
-    Verhalten bei totalValue = 0 (Edge Case)
-    Behandlung von Negativwerten (falls durch Eingabe möglich)
-    Konvention für technisch erzeugte Knoten (uncategorized) im Pfadraum
+## 7. Offene Modellierungsdetails
 
-Status
+- Rundungsregeln für Prozentdarstellung in der UI.
+- Verhalten bei `totalValue = 0`.
+- Behandlung von Negativwerten, falls Eingaben sie zulassen.
 
-✅ Konkretisiert (Startpunkt für Implementierung)
+## Status
+
+✅ Konkretisiert und mit Implementierung abgeglichen
