@@ -27,11 +27,12 @@ Parent und Child werden optisch gleich dargestellt (kein visueller Unterschied).
 
 ---
 
-## OFFEN: Bewertungsdarstellung
+## ✅ ENTSCHIEDEN: Bewertungsdarstellung (historischer Entscheidungsweg)
 
-**Frage:** Wie sollen die 6 Bewertungskategorien in Tree und Sunburst dargestellt werden?
+**Hinweis:** Die finale, normative Spezifikation befindet sich in `docs/03_Bewertungsdarstellung.md`.  
+Dieser Abschnitt dokumentiert den Entscheidungsweg (vormals OFFEN/TBD), ist aber nicht mehr maßgeblich.
 
-### Bewertungskategorien
+### Bewertungskategorien (Diskussionsstand, historisch)
 
 | Kategorie | Bedeutung |
 |-----------|-----------|
@@ -42,33 +43,7 @@ Parent und Child werden optisch gleich dargestellt (kein visueller Unterschied).
 | `missing_in_soll` | IST vorhanden, kein SOLL (Knoten ist ungeplant) |
 | `extra_in_ist` | Synonym für missing_in_soll |
 
-### Darstellungs-Optionen zur Diskussion
-
-#### Option 1: Farbskala
-- Grün: correct
-- Orange: overweighted
-- Rot: underweighted
-- Grau: missing_in_ist
-- Gelb: missing_in_soll
-
-#### Option 2: Icons + Text
-- correct
-- overweighted
-- underweighted
-- missing_in_ist
-- missing_in_soll
-
-#### Option 3: Tooltip + Hover
-- Neutral Farben, Details nur bei Hover
-- Weniger optische Last
-
-#### Option 4: Balkendiagramme
-- Im Knoten kleine SOLL/IST-Vergleichsleisten
-- Visueller Vergleich direkt sichtbar
-
-#### Option 5: Kombiniert
-- Farbe + Icon + Tooltip
-- Mehr Information, aber auch mehr Komplexität
-
-### Status
-[TBD] — Wird in separatem UX-Workshop geklärt
+### Finaler Entscheidungsstatus
+✅ Entschieden am 2026-06-21  
+✅ Konkretisiert in `docs/03_Bewertungsdarstellung.md`  
+➡️ Für Implementierung gilt ausschließlich `docs/03_Bewertungsdarstellung.md`.

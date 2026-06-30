@@ -1,11 +1,11 @@
 # Projektgedächtnis: Portfolio-Visualisierung
 
 ## Aktuelle Projektphase
-**Phase: UX- und Bewertungsdarstellung klären (vor Architektur- und Tech-Stack-Entscheidung)**
+**Phase: Architektur- und Tech-Stack-Entscheidungen konsolidiert, MVP-Definition offen**
 
-*(Fortschritt: 2 von 7 Phasen abgeschlossen)*
+*(Fortschritt: 4 von 7 Phasen abgeschlossen)*
 
-**Begründung:** Fachliche Modellierung ist konsolidiert. Die kritischen offenen Fragen betreffen UX-Entscheidungen (Parent vs Child Darstellung) und Bewertungsdarstellung, die vor Architektur und Technologiewahl entschieden sein müssen. Architektur darf nicht durch Tech-Stack vorweggenommen werden.
+**Begründung:** Fachliche Modellierung und UX-Entscheidungen sind abgeschlossen. Architektur- und Tech-Stack-Entscheidungen wurden getroffen (siehe Entscheidungsprotokoll) und müssen nun in den normativen Dokumenten konsolidiert umgesetzt werden. Nächster inhaltlicher Fokus ist die MVP-Definition und anschließende Datenmodell-/Komponenten-Konkretisierung.
 
 ---
 
@@ -21,12 +21,12 @@
 - Datenstruktur: Baumstruktur mit beliebiger Tiefe, Root = technischer Container, Knotenidentität = vollständiger Pfad
 
 #### SOLL-Modell (Zielportfolio)
-- **Charakteristik:** Flat Target Model ohne Konsistenzzwänge
+- **Charakteristik:** Flat Target Model ohne harte Konsistenzzwänge
 - **Pro Knoten:** `targetPct` (reine lokale Zielannotation)
 - **Keine Aggregation:** Parent und Child mathematisch unabhängig
 - **Keine Summenzwänge:** `targetPct` aller Siblings kann beliebig sein
 - **Keine Normalisierung:** Wie eingegeben wird es verwendet
-- **Keine Konsistenzprüfung:** Keine automatische Korrektur
+- **Wichtig:** Keine Eingabeblockade und keine automatische Korrektur; Freeness-Status dient der diagnostischen Einordnung
 
 #### IST-Modell (Reales Portfolio)
 - **Pro Knoten:** `ownValue` (direkt zugeordnete Werte)
@@ -38,15 +38,17 @@
 - **uncategorized:** Automatischer IST-Knoten für nicht zugeordnete Werte, vollständig aggregiert
 
 #### Bewertungslogik
-- **Kategorien:** correct / overweighted / underweighted / missing_in_ist / missing_in_soll / extra_in_ist
+- **Statussysteme (orthogonal):**
+  1. **Freeness-Status (SOLL-Modellierung):** `correct` / `free` / `overallocated`
+  2. **SOLL/IST-Vergleichsstatus (Vergleichsansicht):** `correct` / `underweighted` / `overweighted` / `missing_in_ist`
 - **Vergleich:** Ausschließlich über vollständigen Pfad
-- **Toleranz:** 0% (d.h. abweichung ≠ correct)
+- **Toleranz:** 0% (d.h. Abweichung ≠ `correct`)
 - **Logik:** Lokal pro Knoten, keine Gesamtscore-Logik
 - **Eingabe:** Manuell für SOLL und IST, keine automatische Erfassung
 
 #### Nicht-Ziele
-- Keine Rebalancing-Logik
-- Keine Kauf-/Verkaufsvorschläge
+- noch keine Rebalancing-Logik
+- noch keine Kauf-/Verkaufsvorschläge
 - Keine Simulationen
 - Keine Zielerreichungsberechnung
 - Keine globale Optimierung
@@ -55,56 +57,69 @@
 ---
 
 ### ✅ UX-Entscheidung 1: Parent vs Child Darstellung
-- **Gewählte Variante:** A (Optisch identisch)
+- **Gewählte Variante:** A (optisch identisch)
 - **Datum:** 2026-06-21
 - **Status:** ✅ ENTSCHIEDEN
 - **Dokumentation:** `docs/02-ux-entscheidungen.md`
 
 ### ✅ UX-Entscheidung 2: Bewertungsdarstellung
 - **Status:** ✅ ENTSCHIEDEN & KONKRETISIERT
-- **Ansatz:** Zwei orthogonale Statussysteme (Freeness + SOLL/IST)
+- **Ansatz:** Zwei orthogonale Statussysteme (Freeness + SOLL/IST), kontextgebunden pro View
 - **Datum:** 2026-06-21
 - **Dokumentation:** `docs/03-bewertungsdarstellung.md`
 
+### ✅ Architektur-/Tech-Stack-Entscheidungen (neuester Stand)
+- **Status:** ✅ ENTSCHIEDEN (Eintragungsdatum maßgeblich)
+- **Datum:** 2026-06-24
+- **Entscheidungen:**
+  - Betriebsform: Lokale Web-App mit Build-Step
+  - Frontend-Framework: React
+  - Build-Tool: Vite
+  - Sprache: TypeScript
+  - Visualisierung: D3.js (für Sunburst)
+  - Architektur-Stil: Feature-based
+  - State-Management: Zustand
+- **Dokumentationsstatus:** Aus `docs/08_noch einzupflegen.md` in normative Dokumente zu konsolidieren
+
 ---
 
-## Offene Punkte (für nächste Phase: Architektur)
+## Offene Punkte (für nächste Phase)
 
-1. **Architektur-Entscheidungen**
-   - Gesamtarchitektur (Monolith, Modular, Feature-based?)
-   - State-Management-Strategie
-   - Komponenten-Struktur
-
-2. **Tech-Stack-Entscheidungen**
-   - Frontend-Framework (React, Vue, Svelte?)
-   - Visualisierungs-Library (D3, Visx, ECharts?)
-   - Build-Tool (Vite, Webpack?)
-   - Testing-Framework
-
-3. **MVP-Definition**
+1. **MVP-Definition**
    - Was ist in Release 1.0 enthalten?
    - Was wird später gemacht?
 
-4. **Datenmodell-Konkretisierung**
+2. **Datenmodell-Konkretisierung**
    - TypeScript Interfaces
    - Funktions-Signaturen für Statusberechnung
+
+3. **Komponenten-Design**
+   - Feature-Zuschnitt (SOLL/IST/Vergleich)
+   - Tree/Sunburst-Komponentenstruktur
+   - Zustandsgrenzen und Selektoren
+
+4. **Implementierung**
+   - Projekt-Setup
+   - Basis-Rendering
+   - Berechnungs- und Statuslogik
+   - UI-Iteration
 
 ---
 
 ## Risiken & Annahmen
 
 ### Risiken
-1. **Missverständnisse durch Darstellung** — Nutzer könnte Parent-Zielwerte übersehen oder als Aggregation missdeuten
+1. **Missverständnisse durch Darstellung** — Nutzer könnte Parent-Zielwerte übersehen oder als Aggregation missdeuten  
    - **Mitigation:** Klare Tooltips, Dokumentation, Onboarding
 
-2. **Späte UX-Komplexität** — Zu viele Icons/Farben/Ebenen machen die Oberfläche unleserlich
+2. **Späte UX-Komplexität** — Zu viele Farben/Signale machen die Oberfläche unleserlich  
    - **Mitigation:** Minimalistisches Design, kontextgebundene Informationen
 
-3. **Überfrachtung der Oberfläche** — Beide Visualisierungen mit zu vielen Kategorien überladen
+3. **Überfrachtung der Oberfläche** — Beide Visualisierungen mit zu vielen Kategorien überladen  
    - **Mitigation:** Nur ein Statussystem pro View aktiv
 
-4. **Fehlinterpretation von Bewertungskategorien** — Verwechslungen zwischen overweighted/underweighted
-   - **Mitigation:** Farbcodes, Randstile, Tooltips
+4. **Fehlinterpretation von Bewertungskategorien** — Verwechslungen zwischen `underweighted`/`overweighted` oder Freeness-Signalen  
+   - **Mitigation:** Farbcodes, Randstile, Tooltips, Legenden
 
 ### Annahmen
 - Anwendung nur auf dem Rechner des Nutzers, nur von ihm genutzt → Keine Sicherheits-, Compliance-, Skalierungsanforderungen
@@ -122,7 +137,7 @@
 - GitHub Copilot
 - VS Code
 - Firefox
-- GitHub (Versionierung)
+- GitHub
 - Google AI Studio
 
 ---
@@ -131,12 +146,12 @@
 
 ### Implementierungsstand
 - **Code:** Keine Implementierung bisher
-- **Dokumentation:** Vollständig (fachlich + UX)
-- **Repository:** https://github.com/Platzmangel/portfolio-visualizer
+- **Dokumentation:** Fachlich + UX vollständig; Architektur/Tech-Stack entschieden, Konsolidierung in den normativen Dokus läuft
+- **Repository:** https://github.com/Fabian-Knispel/portfolio-visualizer
 
 ### Technologie-Stack
-- **Status:** Noch nicht entschieden
-- **Grund:** Wird nach UX- und Architektur-Klärung entschieden
+- **Status:** Entscheidet (Stand 2026-06-24), formale Konsolidierung in `04`/`05` ausstehend
+- **Aktueller Entscheidungsstand:** React + TypeScript + Vite + D3 + Zustand
 
 ### Projektstruktur
 - **VCS:** GitHub
@@ -144,23 +159,24 @@
 - **Branches:** main (nur committed, documented, reviewed)
 
 ### Dokumentation (Struktur)
-```
+```text
 docs/
-├── 00-projektgedachtnis.md (diese Datei)
-├── 01-anforderungen.md (fachlich, vollständig)
-├── 02-ux-entscheidungen.md (UX Decision 1, vollständig)
-├── 03-bewertungsdarstellung.md (UX Decision 2, vollständig)
-├── 04-architektur.md (TBD)
-├── 05-tech-stack.md (TBD)
-├── 06-datenmodell.md (TBD)
-├── 07_Entscheidungsprotokoll.md (Entscheidungshistorie)
-└── 08_noch einzupflegen.md
+├── 00_Projektgedaechtnis.md (Statusdokument, diese Datei)
+├── 01_Anforderungen.md (fachlich, normativ)
+├── 02_UX-Design.md (UX Decision 1 + historischer Entscheidungsweg)
+├── 03_Bewertungsdarstellung.md (UX Decision 2, normativ)
+├── 04_Architektur.md (aktuell zu konsolidieren)
+├── 05-TechStack.md (aktuell zu konsolidieren)
+├── 06_Datenmodell.md (zu konkretisieren)
+├── 07_Entscheidungsprotokoll.md (Entscheidungshistorie, zu aktualisieren)
+└── 08_noch einzupflegen.md (Zwischenspeicher, nicht normativ)
+```
 
 ### Nächste Meilensteine (Phasen)
 1. ✅ Phase 1: Fachliche Spezifikation
 2. ✅ Phase 2: UX-Entscheidungen (2/2 getroffen)
-3. [ ] Phase 3: Architektur-Entscheidungen
-4. [ ] Phase 4: Tech-Stack-Entscheidungen
+3. ✅ Phase 3: Architektur-Entscheidungen (getroffen)
+4. ✅ Phase 4: Tech-Stack-Entscheidungen (getroffen)
 5. [ ] Phase 5: Datenmodell konkretisieren (TypeScript)
 6. [ ] Phase 6: Komponenten-Design
 7. [ ] Phase 7: Implementierung
@@ -173,9 +189,8 @@ Du übernimmst dieses Projekt an dieser Stelle. Du hast vollständigen Zugriff a
 
 ✅ Die fachliche Modellierung (SOLL-Modell, IST-Modell, Bewertungslogik)  
 ✅ Die UX-Entscheidungen (Parent vs Child, Bewertungsdarstellung)  
+✅ Die Architektur-/Tech-Stack-Entscheidungen (Stand 2026-06-24)  
 ✅ Die Entscheidungsdisziplin und Regeln für Zusammenarbeit  
 ✅ Den aktuellen Status und die nächsten Schritte  
 
-**Deine nächste Aufgabe:** Architektur-Entscheidungen klären oder weitermachen, wo ich aufgehört habe.
-
-Was möchtest du tun? 👇
+**Deine nächste Aufgabe:** MVP-Definition präzisieren oder mit Datenmodell-/Komponenten-Konkretisierung fortfahren.

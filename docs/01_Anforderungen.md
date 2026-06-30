@@ -15,6 +15,7 @@
 - Parent und Child mathematisch unabhängig
 - Keine Aggregation, keine Summenzwänge
 - Keine Normalisierung
+- Freeness-Bewertung ist diagnostisch und blockiert Eingaben nicht
 
 ## IST-Modell (Reales Portfolio)
 
