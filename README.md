@@ -11,14 +11,14 @@ Rein deskriptive Differenzanalyse ohne Rebalancing-, Optimierungs- oder Handlung
 
 Privatanleger, tech-versiert, aber nicht Designer. Einzelnutzer, lokal auf eigenem Rechner.
 
-## Features (geplant)
+## Features (MVP-fähiger Zielkorridor)
 
 - Baumstruktur mit beliebiger Tiefe
 - Sunburst-Visualisierung
 - Vergleich SOLL vs IST
 - Zwei orthogonale Bewertungssysteme:
-  - **Freeness-Status:** Konsistenz der Zielstruktur
-  - **SOLL/IST-Status:** Abweichung des realen Portfolios
+  - **Freeness-Status:** Konsistenz der Zielstruktur (SOLL-Modellierung)
+  - **SOLL/IST-Status:** Abweichung des realen Portfolios (Vergleichsansicht)
 
 ## Projektphasen
 
@@ -26,27 +26,34 @@ Privatanleger, tech-versiert, aber nicht Designer. Einzelnutzer, lokal auf eigen
 - [x] Phase 2: UX-Entscheidungen (2/2)
   - [x] Parent vs Child Darstellung
   - [x] Bewertungsdarstellung (zwei Systeme)
-- [ ] Phase 3: Architektur-Entscheidungen
-- [ ] Phase 4: Tech-Stack-Entscheidungen
-- [ ] Phase 5: Datenmodell konkretisieren
+- [x] Phase 3: Architektur-Entscheidungen
+- [x] Phase 4: Tech-Stack-Entscheidungen
+- [x] Phase 5: Datenmodell konkretisieren
 - [ ] Phase 6: Komponenten-Design
 - [ ] Phase 7: Implementierung
 
 ## Dokumentation
 
-- [Projektgedächtnis](docs/00-projektgedachtnis.md) — Status & Entscheidungshistorie
-- [Anforderungen](docs/01-anforderungen.md) — Fachliche Spezifikation
-- [UX-Entscheidungen](docs/02-ux-entscheidungen.md) — Parent vs Child
-- [Bewertungsdarstellung](docs/03-bewertungsdarstellung.md) — UX-Spezifikation
-- [Architektur](docs/04-architektur.md) — TBD
-- [Tech-Stack](docs/05-tech-stack.md) — TBD
-- [Datenmodell](docs/06-datenmodell.md) — TBD
-- [Entscheidungsprotokoll](docs/entscheidungsprotokoll.md) — Alle Entscheidungen
+### Normative Dokumente (maßgeblich)
+
+- [Projektgedächtnis](docs/00_Projektgedaechtnis.md) — Status, Kontext, Phasenfortschritt
+- [Anforderungen](docs/01_Anforderungen.md) — Fachliche Spezifikation
+- [UX-Design](docs/02_UX-Design.md) — UX-Entscheidung 1 + historischer Entscheidungsweg
+- [Bewertungsdarstellung](docs/03_Bewertungsdarstellung.md) — Finale UX-Spezifikation für Statussysteme
+- [Architektur](docs/04_Architektur.md) — Architekturleitlinien
+- [Tech-Stack](docs/05_TechStack.md) — Technologische Entscheidungen
+- [Datenmodell](docs/06_Datenmodell.md) — Typen, Status, Funktionssignaturen
+
+### Historie / Governance
+
+- [Entscheidungsprotokoll](docs/07_Entscheidungsprotokoll.md) — konsolidierte Entscheidungshistorie (Audit Trail)
+
+### Nicht-normativ
+
+- `docs/08_noch einzupflegen.md` — temporärer Zwischenspeicher (nicht maßgeblich)
 
 ## Status
 
-**Aktuelle Phase:** ✅ UX abgeschlossen → Phase 3: Architektur-Entscheidungen
+**Aktuelle Phase:** ✅ Phase 5 abgeschlossen → nächster Schritt: **MVP-Definition präzisieren** und anschließend **Phase 6 (Komponenten-Design)** starten.
 
-**Letzter Commit:** `docs: Projektgedächtnis mit vollständiger Basis-Information integriert`
-
-**GitHub:** https://github.com/Platzmangel/portfolio-visualizer
+**Repository:** https://github.com/Fabian-Knispel/portfolio-visualizer
