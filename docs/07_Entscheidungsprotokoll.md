@@ -18,6 +18,7 @@ Bei Konflikten zwischen Dokumenten gilt: **Eintragungsdatum im Protokoll + norma
 | 2026-06-24 | Tech-Stack | Visualisierung: D3.js (insb. Sunburst) | Hohe Flexibilität für hierarchische Visualisierungen und Interaktionen | Entschieden |
 | 2026-06-30 | Dokumentation | Dokumentenhierarchie präzisiert (00 Status, 01–06 normativ, 07 Historie, 08 Zwischenspeicher) | Konsistenz, klare Verbindlichkeit, konfliktfreie Fortschreibung | Entschieden |
 | 2026-06-30 | Datenmodell | Feature-nahes zentrales Modul mit festem Root-Pfad `root` | Konsistent mit Feature-based Architektur und stabiler Pfad-Identität | Entschieden |
+| 2026-06-30 | Persistenz | Nur fachliche Daten `sollRoot` und `istRoot` werden gespeichert; UI-Zustand bleibt abgeleitet | Minimiert Persistenzlast und verhindert unnötige Kopplung an die Darstellung | Entschieden |
 
 ## Hinweise zur Pflege
 

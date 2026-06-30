@@ -127,6 +127,23 @@ Beim Selbsttest wird die Beispielhierarchie auf drei Punkte geprüft:
 - Verhalten bei `totalValue = 0`.
 - Behandlung von Negativwerten, falls Eingaben sie zulassen.
 
+## 8. Persistenz
+
+Die fachliche Persistenz speichert ausschließlich die beiden Wurzeln `sollRoot` und `istRoot`.
+UI-Zustand wird nicht gespeichert, sondern beim Laden aus den fachlichen Daten neu abgeleitet.
+
+### 8.1 Laden
+
+- Fehlende oder leere Storage-Einträge führen zu einem leeren Initialzustand.
+- Ungültige oder kaputte Storage-Einträge werden ignoriert und ebenfalls auf den Initialzustand zurückgeführt.
+- Das Laden darf nie einen Crash auslösen.
+
+### 8.2 Speichern
+
+- Jede fachliche Änderung darf direkt oder debounced persistiert werden.
+- Speichern betrifft nur SOLL und IST, nicht die UI.
+- Schlägt das Speichern fehl, wird ein Fehlertext an die aufrufende Schicht zurückgegeben und kann dort angezeigt werden.
+
 ## Status
 
 ✅ Konkretisiert und mit Implementierung abgeglichen
