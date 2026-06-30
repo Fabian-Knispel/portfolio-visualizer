@@ -140,9 +140,15 @@ UI-Zustand wird nicht gespeichert, sondern beim Laden aus den fachlichen Daten n
 
 ### 8.2 Speichern
 
-- Jede fachliche Änderung darf direkt oder debounced persistiert werden.
+- Jede fachliche Änderung wird unmittelbar nach der Änderung persistiert.
 - Speichern betrifft nur SOLL und IST, nicht die UI.
 - Schlägt das Speichern fehl, wird ein Fehlertext an die aufrufende Schicht zurückgegeben und kann dort angezeigt werden.
+
+### 8.3 Store-Verhalten
+
+- Der Portfolio-Store lädt beim Erzeugen oder Importieren seinen Initialzustand aus der Persistenz.
+- Fachliche Mutationen (`SOLL` und `IST`) lösen unmittelbar einen erneuten Speicherlauf aus.
+- Eine abgeleitete UI-Schicht darf nur auf den Store reagieren; sie speichert selbst keine eigenen Kopien der fachlichen Daten.
 
 ## Status
 
