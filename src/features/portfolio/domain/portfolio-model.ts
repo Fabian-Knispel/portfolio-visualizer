@@ -44,6 +44,8 @@ export interface FreenessResult {
   status: FreenessStatus;
 }
 
+export type TreeNodeUpdater<TNode extends PortfolioNodeBase<TNode>> = (node: TNode) => TNode;
+
 export interface PortfolioState {
   sollRoot: SollNode | null;
   istRoot: IstNode | null;
@@ -95,6 +97,58 @@ export function buildNodePath(...segments: string[]): NodePath {
 
 export function isRootNodePath(path: NodePath): boolean {
   return path === ROOT_NODE_PATH;
+}
+
+export function updateNodeInTree<TNode extends PortfolioNodeBase<TNode>>(
+  root: TNode,
+  path: NodePath,
+  updater: TreeNodeUpdater<TNode>
+): TNode {
+  if (root.path === path) {
+    return updater(root);
+  }
+
+  return {
+    ...root,
+    children: root.children.map((child) => updateNodeInTree(child, path, updater)),
+  };
+}
+
+function removeNodeInTree<TNode extends PortfolioNodeBase<TNode>>(root: TNode, path: NodePath): TNode | null {
+  if (root.path === path) {
+    return isRootNodePath(path) ? root : null;
+  }
+
+  const nextChildren = root.children
+    .map((child) => removeNodeInTree(child, path))
+    .filter((child): child is TNode => child !== null);
+
+  return {
+    ...root,
+    children: nextChildren,
+  };
+}
+
+export function removeNodeFromTree<TNode extends PortfolioNodeBase<TNode>>(root: TNode, path: NodePath): TNode {
+  return removeNodeInTree(root, path) ?? root;
+}
+
+export function appendNodeToTree<TNode extends PortfolioNodeBase<TNode>>(
+  root: TNode,
+  parentPath: NodePath,
+  childNode: TNode
+): TNode {
+  if (root.path === parentPath) {
+    return {
+      ...root,
+      children: [...root.children, childNode],
+    };
+  }
+
+  return {
+    ...root,
+    children: root.children.map((child) => appendNodeToTree(child, parentPath, childNode)),
+  };
 }
 
 export function computeIstNodeValues(root: IstNode): IstComputedNode {

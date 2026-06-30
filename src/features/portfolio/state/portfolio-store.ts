@@ -1,4 +1,11 @@
-import { IstNode, SollNode } from '../domain/portfolio-model';
+import {
+  IstNode,
+  NodePath,
+  SollNode,
+  appendNodeToTree,
+  removeNodeFromTree,
+  updateNodeInTree,
+} from '../domain/portfolio-model';
 import {
   PortfolioStorageState,
   loadPortfolioStorageState,
@@ -17,6 +24,12 @@ export interface PortfolioStore {
   subscribe(listener: PortfolioStoreListener): () => void;
   setSollRoot(root: SollNode | null): PortfolioStoreSnapshot;
   setIstRoot(root: IstNode | null): PortfolioStoreSnapshot;
+  updateSollNode(path: NodePath, updater: (node: SollNode) => SollNode): PortfolioStoreSnapshot;
+  updateIstNode(path: NodePath, updater: (node: IstNode) => IstNode): PortfolioStoreSnapshot;
+  appendSollNode(parentPath: NodePath, childNode: SollNode): PortfolioStoreSnapshot;
+  appendIstNode(parentPath: NodePath, childNode: IstNode): PortfolioStoreSnapshot;
+  removeSollNode(path: NodePath): PortfolioStoreSnapshot;
+  removeIstNode(path: NodePath): PortfolioStoreSnapshot;
   replaceState(state: PortfolioStorageState): PortfolioStoreSnapshot;
   reloadFromStorage(): PortfolioStoreSnapshot;
   saveNow(): PortfolioStoreSnapshot;
@@ -93,6 +106,72 @@ export function createPortfolioStore(initialState?: PortfolioStorageState): Port
       return setCurrentState({
         ...currentState,
         istRoot: root,
+      });
+    },
+
+    updateSollNode(path: NodePath, updater: (node: SollNode) => SollNode) {
+      if (currentState.sollRoot === null) {
+        return emit();
+      }
+
+      return setCurrentState({
+        ...currentState,
+        sollRoot: updateNodeInTree(currentState.sollRoot, path, updater),
+      });
+    },
+
+    updateIstNode(path: NodePath, updater: (node: IstNode) => IstNode) {
+      if (currentState.istRoot === null) {
+        return emit();
+      }
+
+      return setCurrentState({
+        ...currentState,
+        istRoot: updateNodeInTree(currentState.istRoot, path, updater),
+      });
+    },
+
+    appendSollNode(parentPath: NodePath, childNode: SollNode) {
+      if (currentState.sollRoot === null) {
+        return emit();
+      }
+
+      return setCurrentState({
+        ...currentState,
+        sollRoot: appendNodeToTree(currentState.sollRoot, parentPath, childNode),
+      });
+    },
+
+    appendIstNode(parentPath: NodePath, childNode: IstNode) {
+      if (currentState.istRoot === null) {
+        return emit();
+      }
+
+      return setCurrentState({
+        ...currentState,
+        istRoot: appendNodeToTree(currentState.istRoot, parentPath, childNode),
+      });
+    },
+
+    removeSollNode(path: NodePath) {
+      if (currentState.sollRoot === null) {
+        return emit();
+      }
+
+      return setCurrentState({
+        ...currentState,
+        sollRoot: removeNodeFromTree(currentState.sollRoot, path),
+      });
+    },
+
+    removeIstNode(path: NodePath) {
+      if (currentState.istRoot === null) {
+        return emit();
+      }
+
+      return setCurrentState({
+        ...currentState,
+        istRoot: removeNodeFromTree(currentState.istRoot, path),
       });
     },
 

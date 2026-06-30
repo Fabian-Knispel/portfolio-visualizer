@@ -147,8 +147,9 @@ UI-Zustand wird nicht gespeichert, sondern beim Laden aus den fachlichen Daten n
 ### 8.3 Store-Verhalten
 
 - Der Portfolio-Store lädt beim Erzeugen oder Importieren seinen Initialzustand aus der Persistenz.
-- Fachliche Mutationen (`SOLL` und `IST`) lösen unmittelbar einen erneuten Speicherlauf aus.
+- Fachliche Mutationen (`SOLL` und `IST`) wie Hinzufügen, Entfernen oder Aktualisieren lösen unmittelbar einen erneuten Speicherlauf aus.
 - Eine abgeleitete UI-Schicht darf nur auf den Store reagieren; sie speichert selbst keine eigenen Kopien der fachlichen Daten.
+- Pfadbasierte Tree-Operationen dürfen nur auf `sollRoot` bzw. `istRoot` angewendet werden und müssen die Hierarchie strukturell unverändert lassen, außer an der explizit adressierten Stelle.
 
 ## Status
 

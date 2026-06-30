@@ -20,6 +20,7 @@ Bei Konflikten zwischen Dokumenten gilt: **Eintragungsdatum im Protokoll + norma
 | 2026-06-30 | Datenmodell | Feature-nahes zentrales Modul mit festem Root-Pfad `root` | Konsistent mit Feature-based Architektur und stabiler Pfad-Identität | Entschieden |
 | 2026-06-30 | Persistenz | Nur fachliche Daten `sollRoot` und `istRoot` werden gespeichert; UI-Zustand bleibt abgeleitet | Minimiert Persistenzlast und verhindert unnötige Kopplung an die Darstellung | Entschieden |
 | 2026-06-30 | Store | Portfolio-Store lädt beim Initialisieren und persistiert jede fachliche Mutation unmittelbar | Garantiert Reload-Erhalt und hält die UI nur als Ableitung des fachlichen Zustands | Entschieden |
+| 2026-06-30 | Store-API | Pfadbasierte Tree-Mutationen (`add`, `update`, `remove`) werden direkt im Store angeboten | Macht fachliche Änderungen unmittelbar speicherbar ohne UI-Duplikation der Persistenzlogik | Entschieden |
 
 ## Hinweise zur Pflege
 
