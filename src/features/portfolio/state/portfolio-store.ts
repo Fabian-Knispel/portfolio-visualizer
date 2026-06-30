@@ -8,6 +8,7 @@ import {
 } from '../domain/portfolio-model';
 import {
   PortfolioStorageState,
+  StorageLike,
   loadPortfolioStorageState,
   savePortfolioStorageState,
 } from '../domain/portfolio-storage';
@@ -44,15 +45,18 @@ function createStoreSnapshot(state: PortfolioStorageState, loadError: string | n
   };
 }
 
-function saveStateOrReport(state: PortfolioStorageState): string | null {
-  const result = savePortfolioStorageState(state);
+function saveStateOrReport(state: PortfolioStorageState, storage: StorageLike | null | undefined): string | null {
+  const result = savePortfolioStorageState(state, storage);
 
   return result.success ? null : result.error;
 }
 
-export function createPortfolioStore(initialState?: PortfolioStorageState): PortfolioStore {
+export function createPortfolioStore(
+  initialState?: PortfolioStorageState,
+  storage?: StorageLike | null
+): PortfolioStore {
   const initialLoad = initialState === undefined
-    ? loadPortfolioStorageState()
+    ? loadPortfolioStorageState(storage)
     : { state: initialState, error: null };
 
   let currentState = initialLoad.state;
@@ -69,7 +73,7 @@ export function createPortfolioStore(initialState?: PortfolioStorageState): Port
   }
 
   function persistCurrentState(): PortfolioStoreSnapshot {
-    saveError = saveStateOrReport(currentState);
+    saveError = saveStateOrReport(currentState, storage);
 
     return emit();
   }
@@ -183,7 +187,7 @@ export function createPortfolioStore(initialState?: PortfolioStorageState): Port
     },
 
     reloadFromStorage() {
-      const loadedState = loadPortfolioStorageState();
+      const loadedState = loadPortfolioStorageState(storage);
 
       currentState = loadedState.state;
       loadError = loadedState.error;
