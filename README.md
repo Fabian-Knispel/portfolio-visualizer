@@ -54,6 +54,6 @@ Privatanleger, tech-versiert, aber nicht Designer. Einzelnutzer, lokal auf eigen
 
 ## Status
 
-**Aktuelle Phase:** ✅ Phase 5 abgeschlossen → nächster Schritt: **MVP-Definition präzisieren** und anschließend **Phase 6 (Komponenten-Design)** starten.
+**Aktuelle Phase:** ✅ Phase 5 abgeschlossen → nächster Schritt: **Phase 6 (Komponenten-Design)** starten.
 
 **Repository:** https://github.com/Fabian-Knispel/portfolio-visualizer
