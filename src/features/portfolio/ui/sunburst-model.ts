@@ -3,6 +3,8 @@ import type { HierarchyRectangularNode } from 'd3';
 
 import type { IstComputedNode, SollNode } from '../domain/portfolio-model';
 
+export type SunburstMode = 'soll' | 'ist';
+
 export interface SunburstNodeDatum {
   path: string;
   label: string;
@@ -74,6 +76,14 @@ export function buildIstSunburstDatum(root: IstComputedNode | null): SunburstNod
   }
 
   return transformNode(root);
+}
+
+export function buildSunburstDatumForMode(
+  mode: SunburstMode,
+  sollRoot: SollNode | null,
+  istRoot: IstComputedNode | null
+): SunburstNodeDatum | null {
+  return mode === 'soll' ? buildSollSunburstDatum(sollRoot) : buildIstSunburstDatum(istRoot);
 }
 
 export function buildSunburstSlices(root: SunburstNodeDatum | null, radius: number): SunburstSlice[] {

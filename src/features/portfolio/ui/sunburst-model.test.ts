@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { exampleSollHierarchy } from '../domain/portfolio-model';
-import { buildSollSunburstDatum, buildSunburstSlices } from './sunburst-model';
+import { computeIstNodeValues, computeIstPercentages, exampleIstHierarchy, exampleSollHierarchy } from '../domain/portfolio-model';
+import { buildIstSunburstDatum, buildSollSunburstDatum, buildSunburstDatumForMode, buildSunburstSlices } from './sunburst-model';
 
 describe('sunburst model', () => {
   it('builds a normalized SOLL tree for hierarchical rendering', () => {
@@ -17,6 +17,27 @@ describe('sunburst model', () => {
     expect(equity?.size).toBe(0);
     expect(usa?.size).toBe(0);
     expect(largeCap?.size).toBe(20);
+  });
+
+  it('selects the correct datum for the active sunburst mode', () => {
+    const sollRoot = buildSunburstDatumForMode('soll', exampleSollHierarchy, null);
+    const istRoot = buildSunburstDatumForMode('ist', null, computeIstPercentages(computeIstNodeValues(exampleIstHierarchy)));
+
+    expect(sollRoot?.children[0].size).toBe(0);
+    expect(istRoot?.children[0].size).toBe(100);
+  });
+
+  it('builds a normalized IST tree for hierarchical rendering', () => {
+    const root = buildIstSunburstDatum(computeIstPercentages(computeIstNodeValues(exampleIstHierarchy)));
+
+    expect(root).not.toBeNull();
+    expect(root?.size).toBe(0);
+
+    const equity = root?.children[0];
+    const largeCap = equity?.children[0]?.children[0];
+
+    expect(equity?.size).toBe(100);
+    expect(largeCap?.size).toBe(200);
   });
 
   it('computes sunburst slices with consistent percentages', () => {

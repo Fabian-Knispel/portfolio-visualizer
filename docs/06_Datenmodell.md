@@ -63,6 +63,7 @@ export interface IstComputedNode extends PortfolioNodeBase<IstComputedNode> {
 - Für den Root-Knoten wird `pctOfParent` als `—` dargestellt.
 - Bei `totalValue = 0` entsteht kein Division-durch-0-Fall; `pctTotal` bleibt `0` und die Anzeige ist `0,00 %`.
 - Sunburst und Baumansicht nutzen dieselbe zentrale Berechnungslogik für Prozentwerte.
+- Die Sunburst-Ansicht kann SOLL und IST über denselben Umschaltpfad darstellen; die Transformationsschicht bleibt getrennt vom Rendering.
 - Die Sunburst-Ansicht nutzt eine feature-nahe Transformationsschicht, die SOLL-Daten in ein reines Layout-Datum überführt; dieselbe Schicht kann später für IST wiederverwendet werden.
 - Hover in der Sunburst zeigt nur Label und Prozentwerte, ohne Schreiboperationen oder Selektion auszulösen.
 

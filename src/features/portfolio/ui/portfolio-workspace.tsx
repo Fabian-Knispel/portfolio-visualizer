@@ -18,7 +18,7 @@ import {
 } from '../domain/portfolio-model';
 import { portfolioStore, type PortfolioStoreSnapshot } from '../state/portfolio-store';
 import { PortfolioSunburst } from './portfolio-sunburst';
-import { buildSollSunburstDatum } from './sunburst-model';
+import { buildSunburstDatumForMode, type SunburstMode } from './sunburst-model';
 
 type ViewMode = 'soll' | 'ist' | 'vergleich';
 
@@ -214,9 +214,32 @@ function ViewModeTab({
   );
 }
 
+function SunburstModeTab({
+  mode,
+  activeMode,
+  onChange,
+  label,
+}: {
+  mode: SunburstMode;
+  activeMode: SunburstMode;
+  onChange(mode: SunburstMode): void;
+  label: string;
+}) {
+  return (
+    <button
+      className={`mode-tab ${mode === activeMode ? 'mode-tab--active' : ''}`}
+      onClick={() => onChange(mode)}
+      type="button"
+    >
+      {label}
+    </button>
+  );
+}
+
 export function PortfolioWorkspace() {
   const snapshot = usePortfolioSnapshot();
   const [activeViewMode, setActiveViewMode] = useState<ViewMode>('soll');
+  const [sunburstMode, setSunburstMode] = useState<SunburstMode>('soll');
   const [selectedPaths, setSelectedPaths] = useState<Record<ViewMode, NodePath>>({
     soll: ROOT_NODE_PATH,
     ist: ROOT_NODE_PATH,
@@ -242,13 +265,16 @@ export function PortfolioWorkspace() {
 
   const currentRoot = activeViewMode === 'soll' ? snapshot.sollRoot : activeViewMode === 'ist' ? snapshot.istRoot : snapshot.sollRoot;
   const comparisonRoot = snapshot.istRoot;
-  const sollSunburstRoot = useMemo(() => buildSollSunburstDatum(snapshot.sollRoot), [snapshot.sollRoot]);
   const selectedPath = selectedPaths[activeViewMode];
   const selectedNode = findNodeByPath(currentRoot, selectedPath);
   const parentPath = selectedNode === null ? ROOT_NODE_PATH : getParentPath(selectedNode.path);
   const istComputedRoot = useMemo(
     () => (snapshot.istRoot === null ? null : computeIstPercentages(computeIstNodeValues(snapshot.istRoot))),
     [snapshot.istRoot]
+  );
+  const sunburstRoot = useMemo(
+    () => buildSunburstDatumForMode(sunburstMode, snapshot.sollRoot, istComputedRoot),
+    [istComputedRoot, snapshot.sollRoot, sunburstMode]
   );
   const currentEntries = collectTreeEntries(currentRoot);
   const parentOptions = useMemo(
@@ -423,10 +449,16 @@ export function PortfolioWorkspace() {
           <p className="workspace-kicker">Portfolio Visualizer</p>
           <h1>Seitenbereich für die manuelle Hierarchiepflege</h1>
         </div>
-        <div className="mode-tabs" role="tablist" aria-label="Ansicht wählen">
-          <ViewModeTab mode="soll" activeMode={activeViewMode} onChange={setActiveViewMode} label="SOLL" />
-          <ViewModeTab mode="ist" activeMode={activeViewMode} onChange={setActiveViewMode} label="IST" />
-          <ViewModeTab mode="vergleich" activeMode={activeViewMode} onChange={setActiveViewMode} label="Vergleich" />
+        <div className="workspace-header__controls">
+          <div className="mode-tabs" role="tablist" aria-label="Ansicht wählen">
+            <ViewModeTab mode="soll" activeMode={activeViewMode} onChange={setActiveViewMode} label="SOLL" />
+            <ViewModeTab mode="ist" activeMode={activeViewMode} onChange={setActiveViewMode} label="IST" />
+            <ViewModeTab mode="vergleich" activeMode={activeViewMode} onChange={setActiveViewMode} label="Vergleich" />
+          </div>
+          <div className="mode-tabs" role="tablist" aria-label="Sunburst-Modus wählen">
+            <SunburstModeTab mode="soll" activeMode={sunburstMode} onChange={setSunburstMode} label="Sunburst SOLL" />
+            <SunburstModeTab mode="ist" activeMode={sunburstMode} onChange={setSunburstMode} label="Sunburst IST" />
+          </div>
         </div>
       </header>
 
@@ -436,15 +468,19 @@ export function PortfolioWorkspace() {
             <div className="panel__header panel__header--stacked">
               <div>
                 <p className="panel__eyebrow">Sunburst</p>
-                <h2>SOLL</h2>
+                <h2>{sunburstMode.toUpperCase()}</h2>
               </div>
-              <p className="panel__hint">Hover zeigt Label und Prozentwerte. IST kann später über denselben Adapter ergänzt werden.</p>
+              <p className="panel__hint">Hover zeigt Label und Prozentwerte. Der Schalter oben wechselt ohne Neuladen zwischen SOLL und IST.</p>
             </div>
 
             <PortfolioSunburst
-              root={sollSunburstRoot}
-              title="SOLL"
-              hint="Für die Sunburst-Ansicht sind noch keine SOLL-Daten vorhanden."
+              root={sunburstRoot}
+              title={sunburstMode.toUpperCase()}
+              hint={
+                sunburstMode === 'soll'
+                  ? 'Für die Sunburst-Ansicht sind noch keine SOLL-Daten vorhanden.'
+                  : 'Für die Sunburst-Ansicht sind noch keine IST-Daten vorhanden.'
+              }
             />
           </section>
 

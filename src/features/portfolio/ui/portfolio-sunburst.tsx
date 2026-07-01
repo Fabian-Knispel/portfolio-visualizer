@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { arc, scaleOrdinal, schemeTableau10 } from 'd3';
 
 import { formatPercentageValue } from '../domain/portfolio-model';
@@ -20,6 +20,10 @@ const CHART_RADIUS = VIEWBOX_SIZE / 2 - 24;
 
 export function PortfolioSunburst({ root, title, hint }: PortfolioSunburstProps) {
   const [hoveredSlice, setHoveredSlice] = useState<TooltipState | null>(null);
+
+  useEffect(() => {
+    setHoveredSlice(null);
+  }, [root]);
 
   const slices = useMemo(() => buildSunburstSlices(root, CHART_RADIUS), [root]);
   const colorScale = useMemo(

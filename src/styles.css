@@ -51,6 +51,14 @@ button {
   margin-bottom: 24px;
 }
 
+.workspace-header__controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: flex-end;
+  gap: 12px;
+}
+
 .workspace-kicker,
 .panel__eyebrow {
   margin: 0 0 6px;
