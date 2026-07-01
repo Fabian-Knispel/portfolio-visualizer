@@ -475,6 +475,17 @@ button {
   color: var(--text);
 }
 
+.field input[aria-invalid='true'] {
+  border-color: rgba(239, 68, 68, 0.82);
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.24);
+}
+
+.field__error {
+  margin: -4px 0 10px;
+  color: #fca5a5;
+  font-size: 0.8rem;
+}
+
 .field input:disabled,
 .field select:disabled,
 .button:disabled,
@@ -499,6 +510,11 @@ button {
 .button--primary {
   background: var(--accent);
   color: #eef2ff;
+}
+
+.button--saved {
+  background: #166534;
+  color: #dcfce7;
 }
 
 .button--ghost {
@@ -526,6 +542,27 @@ button {
   border: 1px dashed var(--line-strong);
   color: var(--text-muted);
   background: rgba(15, 23, 42, 0.38);
+}
+
+.panel__error,
+.panel__success {
+  margin: 0;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  border: 1px solid;
+}
+
+.panel__error {
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.26);
+  border-color: rgba(239, 68, 68, 0.42);
+}
+
+.panel__success {
+  color: #dcfce7;
+  background: rgba(22, 101, 52, 0.3);
+  border-color: rgba(74, 222, 128, 0.34);
 }
 
 @media (max-width: 1320px) {

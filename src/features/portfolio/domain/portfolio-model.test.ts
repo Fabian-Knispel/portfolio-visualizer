@@ -109,6 +109,47 @@ describe('portfolio percentage computation', () => {
       pctOfParent: undefined,
     });
   });
+
+  it('returns stable percentages when parent value is zero or missing', () => {
+    expect(computePercentageValues(30, 120)).toEqual({
+      pctTotal: 0.25,
+      pctOfParent: undefined,
+    });
+
+    expect(computePercentageValues(30, 120, 0)).toEqual({
+      pctTotal: 0.25,
+      pctOfParent: undefined,
+    });
+  });
+
+  it('normalizes non-finite own values to zero before aggregating percentages', () => {
+    const computed = computeIstPercentages(computeIstNodeValues({
+      path: ROOT_NODE_PATH,
+      label: 'Portfolio',
+      ownValue: Number.NaN,
+      children: [
+        {
+          path: 'root/Invalid',
+          label: 'Invalid',
+          ownValue: Number.POSITIVE_INFINITY,
+          children: [],
+        },
+        {
+          path: 'root/Valid',
+          label: 'Valid',
+          ownValue: 100,
+          children: [],
+        },
+      ],
+    }));
+
+    expect(computed.nodeValue).toBe(100);
+    expect(computed.pctTotal).toBe(1);
+    expect(computed.children[0].nodeValue).toBe(0);
+    expect(computed.children[0].pctTotal).toBe(0);
+    expect(computed.children[1].nodeValue).toBe(100);
+    expect(computed.children[1].pctTotal).toBe(1);
+  });
 });
 
 describe('formatPercentageValue', () => {

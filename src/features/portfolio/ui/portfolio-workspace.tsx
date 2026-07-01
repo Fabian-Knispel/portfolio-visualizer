@@ -61,6 +61,11 @@ interface TreePresentation {
   showBadge: boolean;
 }
 
+interface NumericValidationResult {
+  parsedValue: number | undefined;
+  error: string | null;
+}
+
 function usePortfolioSnapshot(): PortfolioStoreSnapshot {
   return useSyncExternalStore(
     (onStoreChange) => portfolioStore.subscribe(() => onStoreChange()),
@@ -170,6 +175,43 @@ function parseOptionalNumber(value: string): number | undefined {
   return Number.isFinite(parsedValue) ? parsedValue : undefined;
 }
 
+function validateNumericInput(value: string, mode: 'soll' | 'ist', fieldLabel: string): NumericValidationResult {
+  const parsedValue = parseOptionalNumber(value);
+
+  if (value.trim().length === 0) {
+    return {
+      parsedValue: undefined,
+      error: null,
+    };
+  }
+
+  if (parsedValue === undefined) {
+    return {
+      parsedValue: undefined,
+      error: `${fieldLabel}: Bitte eine gueltige Zahl eingeben.`,
+    };
+  }
+
+  if (mode === 'soll' && (parsedValue < 0 || parsedValue > 100)) {
+    return {
+      parsedValue,
+      error: `${fieldLabel}: Prozentwerte muessen zwischen 0 und 100 liegen.`,
+    };
+  }
+
+  if (mode === 'ist' && parsedValue < 0) {
+    return {
+      parsedValue,
+      error: `${fieldLabel}: Werte duerfen nicht negativ sein.`,
+    };
+  }
+
+  return {
+    parsedValue,
+    error: null,
+  };
+}
+
 function formatNumber(value: number | undefined): string {
   return value === undefined ? '' : String(value);
 }
@@ -178,12 +220,16 @@ function formatRelativePath(path: NodePath): string {
   return path === ROOT_NODE_PATH ? 'root' : path.replace(/^root\//, '');
 }
 
+function trimTrailingZeros(formatted: string): string {
+  return formatted.replace(/\.0+$|(?<=\.[0-9]*?)0+$/g, '').replace(/\.$/, '');
+}
+
 function formatStoredPercent(value: number | undefined): string {
-  return value === undefined ? '—' : `${value.toFixed(2)} %`;
+  return value === undefined ? '—' : `${trimTrailingZeros(value.toFixed(2))} %`;
 }
 
 function formatRatioPercent(value: number | undefined): string {
-  return value === undefined ? '—' : `${(value * 100).toFixed(2)} %`;
+  return value === undefined ? '—' : `${trimTrailingZeros((value * 100).toFixed(2))} %`;
 }
 
 function ViewModeTab({
@@ -228,6 +274,21 @@ export function PortfolioWorkspace({
     childLabel: '',
     childNumericValue: '',
   });
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (savedAt === null) {
+      return;
+    }
+
+    const timeoutId = globalThis.setTimeout(() => {
+      setSavedAt(null);
+    }, 1500);
+
+    return () => {
+      globalThis.clearTimeout(timeoutId);
+    };
+  }, [savedAt]);
 
   useEffect(() => {
     if (snapshot.sollRoot === null) {
@@ -467,33 +528,46 @@ export function PortfolioWorkspace({
       return;
     }
 
+    if (editValueValidation.error !== null) {
+      return;
+    }
+
     const nextLabel = draft.label.trim().length > 0 ? draft.label.trim() : selectedNode.label;
+    let nextSnapshot: PortfolioStoreSnapshot = snapshot;
 
     if (draft.parentPath !== parentPath && !isRootNodePath(selectedNode.path)) {
       if (activeViewMode === 'soll') {
-        portfolioStore.moveSollNode(selectedNode.path, draft.parentPath);
+        nextSnapshot = portfolioStore.moveSollNode(selectedNode.path, draft.parentPath);
       } else {
-        portfolioStore.moveIstNode(selectedNode.path, draft.parentPath);
+        nextSnapshot = portfolioStore.moveIstNode(selectedNode.path, draft.parentPath);
       }
     }
 
     if (activeViewMode === 'soll') {
-      portfolioStore.updateSollNode(selectedNode.path, (node) => ({
+      nextSnapshot = portfolioStore.updateSollNode(selectedNode.path, (node) => ({
         ...node,
         label: nextLabel,
-        targetPct: parseOptionalNumber(draft.numericValue),
+        targetPct: editValueValidation.parsedValue,
       }));
     } else {
-      portfolioStore.updateIstNode(selectedNode.path, (node) => ({
+      nextSnapshot = portfolioStore.updateIstNode(selectedNode.path, (node) => ({
         ...node,
         label: nextLabel,
-        ownValue: parseOptionalNumber(draft.numericValue),
+        ownValue: editValueValidation.parsedValue,
       }));
+    }
+
+    if (nextSnapshot.saveError === null) {
+      setSavedAt(Date.now());
     }
   }
 
   function handleAddChild(): void {
     if (selectedNode === null || activeViewMode === 'vergleich') {
+      return;
+    }
+
+    if (childValueValidation.error !== null) {
       return;
     }
 
@@ -505,21 +579,26 @@ export function PortfolioWorkspace({
     }
 
     const childPath = createUniqueChildPath(selectedNode.path, childLabel, selectedNode.children.map((child) => child.path));
+    let nextSnapshot: PortfolioStoreSnapshot;
 
     if (activeViewMode === 'soll') {
-      portfolioStore.appendSollNode(selectedNode.path, {
+      nextSnapshot = portfolioStore.appendSollNode(selectedNode.path, {
         path: childPath,
         label: childLabel,
-        targetPct: parseOptionalNumber(draft.childNumericValue),
+        targetPct: childValueValidation.parsedValue,
         children: [],
       });
     } else {
-      portfolioStore.appendIstNode(selectedNode.path, {
+      nextSnapshot = portfolioStore.appendIstNode(selectedNode.path, {
         path: childPath,
         label: childLabel,
-        ownValue: parseOptionalNumber(draft.childNumericValue),
+        ownValue: childValueValidation.parsedValue,
         children: [],
       });
+    }
+
+    if (nextSnapshot.saveError === null) {
+      setSavedAt(Date.now());
     }
 
     setDraft((previous) => ({
@@ -550,6 +629,19 @@ export function PortfolioWorkspace({
   const readOnlyMode = activeViewMode === 'vergleich';
   const isIstMode = activeViewMode === 'ist';
   const isSollMode = activeViewMode === 'soll';
+  const editValueValidation =
+    isSollMode || isIstMode
+      ? validateNumericInput(draft.numericValue, isSollMode ? 'soll' : 'ist', isSollMode ? 'SOLL-Ziel' : 'IST-Wert')
+      : { parsedValue: undefined, error: null };
+  const childValueValidation =
+    isSollMode || isIstMode
+      ? validateNumericInput(
+        draft.childNumericValue,
+        isSollMode ? 'soll' : 'ist',
+        isSollMode ? 'Neues SOLL-Ziel' : 'Neuer IST-Wert'
+      )
+      : { parsedValue: undefined, error: null };
+  const saveSucceeded = savedAt !== null && snapshot.saveError === null;
   const treePanelTitle = activeViewMode === 'vergleich' ? 'VERGLEICH-PORTFOLIO' : `${activeViewMode.toUpperCase()}-PORTFOLIO`;
   const sunburstCollapseLabel = areAllTreeNodesCollapsed ? 'Alle ausklappen' : 'Alle einklappen';
 
@@ -630,6 +722,9 @@ export function PortfolioWorkspace({
                 ? 'Vergleich ist bewusst lesbar. Bearbeitung erfolgt in SOLL oder IST.'
                 : 'Label, Wert und Parent werden hier gepflegt.'}
             </p>
+            {!readOnlyMode && snapshot.saveError !== null ? <p className="panel__error" role="alert">{snapshot.saveError}</p> : null}
+            {snapshot.loadError !== null ? <p className="panel__error" role="alert">{snapshot.loadError}</p> : null}
+            {!readOnlyMode && saveSucceeded ? <p className="panel__success">Gespeichert ✓</p> : null}
           </div>
 
           {selectedNode === null ? (
@@ -685,7 +780,13 @@ export function PortfolioWorkspace({
                 ) : null}
               </div>
 
-              <div className="form-card">
+              <form
+                className="form-card"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  handleSave();
+                }}
+              >
                 <div className="form-card__header">
                   <h3>Bearbeiten</h3>
                   <span>{readOnlyMode ? 'Lesemodus' : activeViewMode.toUpperCase()}</span>
@@ -707,10 +808,13 @@ export function PortfolioWorkspace({
                     disabled={readOnlyMode}
                     inputMode="decimal"
                     value={draft.numericValue}
+                    aria-invalid={editValueValidation.error !== null}
+                    aria-describedby={editValueValidation.error !== null ? 'edit-numeric-error' : undefined}
                     onChange={(event) => setDraft((previous) => ({ ...previous, numericValue: event.target.value }))}
                     placeholder={isSollMode ? 'z. B. 25' : 'z. B. 1000'}
                   />
                 </label>
+                {editValueValidation.error !== null ? <p className="field__error" id="edit-numeric-error" role="alert">{editValueValidation.error}</p> : null}
 
                 <label className="field">
                   <span>Parent</span>
@@ -729,8 +833,12 @@ export function PortfolioWorkspace({
                 </label>
 
                 <div className="form-actions">
-                  <button className="button button--primary" disabled={readOnlyMode} onClick={handleSave} type="button">
-                    Änderungen speichern
+                  <button
+                    className={`button button--primary ${saveSucceeded ? 'button--saved' : ''}`}
+                    disabled={readOnlyMode || editValueValidation.error !== null}
+                    type="submit"
+                  >
+                    {saveSucceeded ? 'Gespeichert ✓' : 'Änderungen speichern'}
                   </button>
                   <button
                     className="button button--ghost"
@@ -741,9 +849,15 @@ export function PortfolioWorkspace({
                     Löschen
                   </button>
                 </div>
-              </div>
+              </form>
 
-              <div className="form-card">
+              <form
+                className="form-card"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  handleAddChild();
+                }}
+              >
                 <div className="form-card__header">
                   <h3>Kind anlegen</h3>
                   <span>unter {formatRelativePath(selectedNode.path)}</span>
@@ -766,15 +880,22 @@ export function PortfolioWorkspace({
                     disabled={readOnlyMode}
                     inputMode="decimal"
                     value={draft.childNumericValue}
+                    aria-invalid={childValueValidation.error !== null}
+                    aria-describedby={childValueValidation.error !== null ? 'child-numeric-error' : undefined}
                     onChange={(event) => setDraft((previous) => ({ ...previous, childNumericValue: event.target.value }))}
                     placeholder={isSollMode ? 'z. B. 15' : 'z. B. 250'}
                   />
                 </label>
+                {childValueValidation.error !== null ? <p className="field__error" id="child-numeric-error" role="alert">{childValueValidation.error}</p> : null}
 
-                <button className="button button--primary" disabled={readOnlyMode} onClick={handleAddChild} type="button">
+                <button
+                  className="button button--primary"
+                  disabled={readOnlyMode || draft.childLabel.trim().length === 0 || childValueValidation.error !== null}
+                  type="submit"
+                >
                   Kind anlegen
                 </button>
-              </div>
+              </form>
             </div>
           )}
         </aside>
