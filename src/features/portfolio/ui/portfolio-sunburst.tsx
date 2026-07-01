@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { arc, scaleOrdinal, schemeTableau10 } from 'd3';
+import { arc } from 'd3';
 
 import { formatPercentageValue } from '../domain/portfolio-model';
 import type { SunburstNodeDatum, SunburstSlice } from './sunburst-model';
@@ -26,10 +26,6 @@ export function PortfolioSunburst({ root, title, hint }: PortfolioSunburstProps)
   }, [root]);
 
   const slices = useMemo(() => buildSunburstSlices(root, CHART_RADIUS), [root]);
-  const colorScale = useMemo(
-    () => scaleOrdinal(schemeTableau10).domain(Array.from(new Set(slices.map((slice) => slice.branchPath)))),
-    [slices]
-  );
 
   const arcGenerator = useMemo(
     () =>
@@ -72,13 +68,14 @@ export function PortfolioSunburst({ root, title, hint }: PortfolioSunburstProps)
 
           {slices.map((slice) => {
             const isActive = tooltipSlice?.path === slice.path;
+            const fillLevel = Math.min(slice.depth, 5);
 
             return (
               <path
                 key={slice.path}
                 className={`sunburst-chart__segment ${isActive ? 'sunburst-chart__segment--active' : ''}`}
                 d={arcGenerator(slice) ?? undefined}
-                fill={colorScale(slice.branchPath)}
+                style={{ fill: `var(--sunburst-depth-${fillLevel})` }}
                 onPointerEnter={() => setHoveredSlice({ slice })}
                 onPointerLeave={() => setHoveredSlice(null)}
               />

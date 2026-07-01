@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+﻿import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import type { JSX } from 'react';
 
 import {
   ROOT_NODE_PATH,
   exampleIstHierarchy,
   exampleSollHierarchy,
+  type IstComputedNode,
   type IstNode,
   type NodePath,
   type PortfolioNodeBase,
@@ -25,8 +27,6 @@ export type ViewMode = 'soll' | 'ist' | 'vergleich';
 interface PortfolioWorkspaceProps {
   activeViewMode: ViewMode;
   onActiveViewModeChange(mode: ViewMode): void;
-  sunburstMode: SunburstMode;
-  onSunburstModeChange(mode: SunburstMode): void;
 }
 
 interface EditorDraft {
@@ -42,6 +42,23 @@ interface TreeNodeEntry {
   label: string;
   depth: number;
   childrenCount: number;
+}
+
+type TreeStatus =
+  | 'correct'
+  | 'free'
+  | 'overallocated'
+  | 'underweighted'
+  | 'overweighted'
+  | 'missing_in_ist'
+  | 'missing_in_soll';
+
+interface TreePresentation {
+  status?: TreeStatus;
+  primaryValue: string;
+  secondaryValue?: string;
+  direction: 'up' | 'down' | 'flat';
+  showBadge: boolean;
 }
 
 function usePortfolioSnapshot(): PortfolioStoreSnapshot {
@@ -161,42 +178,12 @@ function formatRelativePath(path: NodePath): string {
   return path === ROOT_NODE_PATH ? 'root' : path.replace(/^root\//, '');
 }
 
-interface TreeNodeRowProps<TNode extends PortfolioNodeBase<TNode>> {
-  node: TNode;
-  depth: number;
-  selectedPath: NodePath;
-  onSelect(path: NodePath): void;
+function formatStoredPercent(value: number | undefined): string {
+  return value === undefined ? '—' : `${value.toFixed(2)} %`;
 }
 
-function TreeNodeRow<TNode extends PortfolioNodeBase<TNode>>({
-  node,
-  depth,
-  selectedPath,
-  onSelect,
-}: TreeNodeRowProps<TNode>) {
-  const isSelected = node.path === selectedPath;
-
-  return (
-    <li className="tree-list__item">
-      <button
-        className={`tree-node ${isSelected ? 'tree-node--selected' : ''}`}
-        style={{ marginInlineStart: depth * 16 }}
-        onClick={() => onSelect(node.path)}
-        type="button"
-      >
-        <span className="tree-node__label">{node.label}</span>
-        <span className="tree-node__path">{formatRelativePath(node.path)}</span>
-        <span className="tree-node__count">{node.children.length} Kinder</span>
-      </button>
-      {node.children.length > 0 ? (
-        <ul className="tree-list">
-          {node.children.map((child) => (
-            <TreeNodeRow key={child.path} node={child} depth={depth + 1} selectedPath={selectedPath} onSelect={onSelect} />
-          ))}
-        </ul>
-      ) : null}
-    </li>
-  );
+function formatRatioPercent(value: number | undefined): string {
+  return value === undefined ? '—' : `${(value * 100).toFixed(2)} %`;
 }
 
 function ViewModeTab({
@@ -221,35 +208,14 @@ function ViewModeTab({
   );
 }
 
-function SunburstModeTab({
-  mode,
-  activeMode,
-  onChange,
-  label,
-}: {
-  mode: SunburstMode;
-  activeMode: SunburstMode;
-  onChange(mode: SunburstMode): void;
-  label: string;
-}) {
-  return (
-    <button
-      className={`mode-tab ${mode === activeMode ? 'mode-tab--active' : ''}`}
-      onClick={() => onChange(mode)}
-      type="button"
-    >
-      {label}
-    </button>
-  );
-}
-
 export function PortfolioWorkspace({
   activeViewMode,
   onActiveViewModeChange,
-  sunburstMode,
-  onSunburstModeChange,
 }: PortfolioWorkspaceProps) {
   const snapshot = usePortfolioSnapshot();
+  const childInputRef = useRef<HTMLInputElement | null>(null);
+  const [sunburstMode, setSunburstMode] = useState<SunburstMode>('soll');
+  const [collapsedTreeNodes, setCollapsedTreeNodes] = useState<Record<NodePath, boolean>>({});
   const [selectedPaths, setSelectedPaths] = useState<Record<ViewMode, NodePath>>({
     soll: ROOT_NODE_PATH,
     ist: ROOT_NODE_PATH,
@@ -273,8 +239,13 @@ export function PortfolioWorkspace({
     }
   }, [snapshot.istRoot, snapshot.sollRoot]);
 
+  useEffect(() => {
+    if (activeViewMode === 'soll' || activeViewMode === 'ist') {
+      setSunburstMode(activeViewMode);
+    }
+  }, [activeViewMode]);
+
   const currentRoot = activeViewMode === 'soll' ? snapshot.sollRoot : activeViewMode === 'ist' ? snapshot.istRoot : snapshot.sollRoot;
-  const comparisonRoot = snapshot.istRoot;
   const selectedPath = selectedPaths[activeViewMode];
   const selectedNode = findNodeByPath(currentRoot, selectedPath);
   const parentPath = selectedNode === null ? ROOT_NODE_PATH : getParentPath(selectedNode.path);
@@ -282,11 +253,17 @@ export function PortfolioWorkspace({
     () => (snapshot.istRoot === null ? null : computeIstPercentages(computeIstNodeValues(snapshot.istRoot))),
     [snapshot.istRoot]
   );
+
   const sunburstRoot = useMemo(
     () => buildSunburstDatumForMode(sunburstMode, snapshot.sollRoot, istComputedRoot),
     [istComputedRoot, snapshot.sollRoot, sunburstMode]
   );
-  const currentEntries = collectTreeEntries(currentRoot);
+
+  const currentEntries = useMemo(() => collectTreeEntries(currentRoot), [currentRoot]);
+  const expandableEntries = useMemo(() => currentEntries.filter((entry) => entry.childrenCount > 0), [currentEntries]);
+  const areAllTreeNodesCollapsed =
+    expandableEntries.length > 0 && expandableEntries.every((entry) => collapsedTreeNodes[entry.path] === true);
+
   const parentOptions = useMemo(
     () =>
       currentEntries.filter((entry) => {
@@ -329,7 +306,11 @@ export function PortfolioWorkspace({
     setDraft({
       label: selectedNode.label,
       numericValue:
-        activeViewMode === 'soll' ? formatNumber((selectedNode as SollNode).targetPct) : activeViewMode === 'ist' ? formatNumber((selectedNode as IstNode).ownValue) : '',
+        activeViewMode === 'soll'
+          ? formatNumber((selectedNode as SollNode).targetPct)
+          : activeViewMode === 'ist'
+            ? formatNumber((selectedNode as IstNode).ownValue)
+            : '',
       parentPath,
       childLabel: '',
       childNumericValue: '',
@@ -344,8 +325,6 @@ export function PortfolioWorkspace({
   }, [parentPath]);
 
   const selectedCompareNode = selectedNode === null ? null : findNodeByPath(snapshot.sollRoot, selectedNode.path);
-  const selectedIstNode = selectedNode === null ? null : findNodeByPath(snapshot.istRoot, selectedNode.path);
-
   const selectedIstComputedNode =
     activeViewMode !== 'ist' || istComputedRoot === null || selectedNode === null
       ? null
@@ -362,6 +341,126 @@ export function PortfolioWorkspace({
       ...previous,
       [activeViewMode]: path,
     }));
+  }
+
+  function toggleTreeCollapseAll(): void {
+    if (areAllTreeNodesCollapsed) {
+      setCollapsedTreeNodes({});
+      return;
+    }
+
+    setCollapsedTreeNodes(
+      Object.fromEntries(expandableEntries.map((entry) => [entry.path, true])) as Record<NodePath, boolean>
+    );
+  }
+
+  function toggleTreeNodeCollapse(path: NodePath): void {
+    setCollapsedTreeNodes((previous) => ({
+      ...previous,
+      [path]: !previous[path],
+    }));
+  }
+
+  function getTreeNodePresentation(node: SollNode | IstNode): TreePresentation {
+    if (activeViewMode === 'soll') {
+      const sollNode = node as SollNode;
+
+      if (sollNode.children.length > 0) {
+        const freeness = computeFreenessStatus(sollNode);
+
+        return {
+          status: freeness?.status,
+          primaryValue: formatStoredPercent(freeness?.childrenTargetSumPct),
+          secondaryValue: formatStoredPercent(sollNode.targetPct),
+          direction: freeness?.status === 'overallocated' ? 'up' : freeness?.status === 'free' ? 'down' : 'flat',
+          showBadge: freeness?.status === 'correct',
+        };
+      }
+
+      return {
+        primaryValue: formatStoredPercent(sollNode.targetPct),
+        secondaryValue: formatStoredPercent(sollNode.targetPct),
+        direction: 'flat',
+        showBadge: false,
+      };
+    }
+
+    if (activeViewMode === 'ist') {
+      const istNode = istComputedRoot === null ? null : findNodeByPath(istComputedRoot, node.path);
+
+      return {
+        primaryValue: formatRatioPercent(istNode?.pctTotal),
+        secondaryValue: formatRatioPercent(istNode?.pctOfParent),
+        direction: 'flat',
+        showBadge: false,
+      };
+    }
+
+    const sollNode = node as SollNode;
+    const istNode = istComputedRoot === null ? null : findNodeByPath(istComputedRoot, node.path);
+    const compare = computeCompareStatus(sollNode.path, sollNode.targetPct ?? 0, istNode?.pctTotal ?? 0);
+
+    return {
+      status: compare.status,
+      primaryValue: formatRatioPercent(istNode?.pctTotal),
+      secondaryValue: formatStoredPercent(sollNode.targetPct),
+      direction:
+        compare.status === 'overweighted'
+          ? 'up'
+          : compare.status === 'underweighted' || compare.status === 'missing_in_ist'
+            ? 'down'
+            : 'flat',
+      showBadge: compare.status === 'correct',
+    };
+  }
+
+  function renderTreeNode(node: SollNode | IstNode, depth: number): JSX.Element {
+    const isSelected = node.path === selectedPath;
+    const isExpandable = node.children.length > 0;
+    const isCollapsed = collapsedTreeNodes[node.path] === true;
+    const presentation = getTreeNodePresentation(node);
+
+    return (
+      <li key={node.path} className="tree-list__item">
+        <div
+          className={`tree-node ${isSelected ? 'tree-node--selected' : ''}`}
+          data-status={presentation.status}
+          style={{ marginInlineStart: depth * 14 }}
+        >
+          <button
+            aria-label={isCollapsed ? 'Knoten aufklappen' : 'Knoten einklappen'}
+            className="tree-node__toggle"
+            disabled={!isExpandable}
+            onClick={() => toggleTreeNodeCollapse(node.path)}
+            type="button"
+          >
+            {isExpandable ? (isCollapsed ? '▸' : '▾') : '•'}
+          </button>
+
+          <button className="tree-node__select" onClick={() => updateSelectedPath(node.path)} type="button">
+            <span className="tree-node__status-dot" aria-hidden="true" />
+            <span className="tree-node__label">{node.label}</span>
+          </button>
+
+          <div className="tree-node__meta">
+            <span className="tree-node__metric">
+              {presentation.primaryValue}
+              {presentation.secondaryValue !== undefined ? (
+                <span className="tree-node__reference"> ({presentation.secondaryValue})</span>
+              ) : null}
+            </span>
+            <span className="tree-node__direction" aria-hidden="true">
+              {presentation.direction === 'up' ? '↑' : presentation.direction === 'down' ? '↓' : '→'}
+            </span>
+            {presentation.showBadge ? <span className="tree-node__badge">✓</span> : null}
+          </div>
+        </div>
+
+        {isExpandable && !isCollapsed ? (
+          <ul className="tree-list">{node.children.map((child) => renderTreeNode(child as SollNode | IstNode, depth + 1))}</ul>
+        ) : null}
+      </li>
+    );
   }
 
   function handleSave(): void {
@@ -402,6 +501,7 @@ export function PortfolioWorkspace({
     const childLabel = draft.childLabel.trim();
 
     if (childLabel.length === 0) {
+      childInputRef.current?.focus();
       return;
     }
 
@@ -451,6 +551,8 @@ export function PortfolioWorkspace({
   const readOnlyMode = activeViewMode === 'vergleich';
   const isIstMode = activeViewMode === 'ist';
   const isSollMode = activeViewMode === 'soll';
+  const treePanelTitle = activeViewMode === 'vergleich' ? 'VERGLEICH-PORTFOLIO' : `${activeViewMode.toUpperCase()}-PORTFOLIO`;
+  const sunburstCollapseLabel = areAllTreeNodesCollapsed ? 'Alle ausklappen' : 'Alle einklappen';
 
   return (
     <div className="workspace-shell">
@@ -465,45 +567,20 @@ export function PortfolioWorkspace({
             <ViewModeTab mode="ist" activeMode={activeViewMode} onChange={onActiveViewModeChange} label="IST" />
             <ViewModeTab mode="vergleich" activeMode={activeViewMode} onChange={onActiveViewModeChange} label="Vergleich" />
           </div>
-          <div className="mode-tabs" role="tablist" aria-label="Sunburst-Modus wählen">
-            <SunburstModeTab mode="soll" activeMode={sunburstMode} onChange={onSunburstModeChange} label="Sunburst SOLL" />
-            <SunburstModeTab mode="ist" activeMode={sunburstMode} onChange={onSunburstModeChange} label="Sunburst IST" />
-          </div>
         </div>
       </header>
 
       <div className="workspace-body">
-        <div className="workspace-main">
-          <section className="panel panel--sunburst">
-            <div className="panel__header panel__header--stacked">
-              <div>
-                <p className="panel__eyebrow">Sunburst</p>
-                <h2>{sunburstMode.toUpperCase()}</h2>
-              </div>
-              <p className="panel__hint">Hover zeigt Label und Prozentwerte. Der Schalter oben wechselt ohne Neuladen zwischen SOLL und IST.</p>
-            </div>
-
-            <PortfolioSunburst
-              root={sunburstRoot}
-              title={sunburstMode.toUpperCase()}
-              hint={
-                sunburstMode === 'soll'
-                  ? 'Für die Sunburst-Ansicht sind noch keine SOLL-Daten vorhanden.'
-                  : 'Für die Sunburst-Ansicht sind noch keine IST-Daten vorhanden.'
-              }
-            />
-          </section>
-
-          <section className="panel panel--tree">
+        <section className="panel panel--tree">
           <div className="panel__header">
             <div>
               <p className="panel__eyebrow">Baumansicht</p>
-              <h2>{activeViewMode === 'vergleich' ? 'Vergleich (nur lesbar)' : activeViewMode.toUpperCase()}</h2>
+              <h2>{treePanelTitle}</h2>
             </div>
-            <div className="panel__meta">
-              <span>{currentEntries.length} Knoten</span>
-              {snapshot.loadError !== null ? <span className="status-badge status-badge--warn">Ladefehler</span> : null}
-              {snapshot.saveError !== null ? <span className="status-badge status-badge--warn">Speicherfehler</span> : null}
+            <div className="panel__header-actions">
+              <button className="button button--primary" disabled={readOnlyMode || selectedNode === null} onClick={handleAddChild} type="button">
+                + Hinzufügen
+              </button>
             </div>
           </div>
 
@@ -513,16 +590,35 @@ export function PortfolioWorkspace({
             </div>
           ) : (
             <ul className="tree-list tree-list--root">
-              {currentRoot.children.length === 0 ? (
-                <li className="tree-list__empty">Noch keine Kinder angelegt.</li>
-              ) : null}
-              {currentRoot.children.map((child) => (
-                <TreeNodeRow key={child.path} node={child} depth={0} selectedPath={selectedPath} onSelect={updateSelectedPath} />
-              ))}
+              {currentRoot.children.length === 0 ? <li className="tree-list__empty">Noch keine Kinder angelegt.</li> : null}
+              {currentRoot.children.map((child) => renderTreeNode(child as SollNode | IstNode, 0))}
             </ul>
           )}
-          </section>
-        </div>
+        </section>
+
+        <section className="panel panel--sunburst">
+          <div className="panel__header">
+            <div>
+              <p className="panel__eyebrow">Sunburst</p>
+              <h2>SUNBURST</h2>
+            </div>
+            <div className="panel__header-actions">
+              <button className="button button--ghost" disabled={currentRoot === null} onClick={toggleTreeCollapseAll} type="button">
+                {sunburstCollapseLabel}
+              </button>
+            </div>
+          </div>
+
+          <PortfolioSunburst
+            root={sunburstRoot}
+            title={sunburstMode.toUpperCase()}
+            hint={
+              sunburstMode === 'soll'
+                ? 'Für die Sunburst-Ansicht sind noch keine SOLL-Daten vorhanden.'
+                : 'Für die Sunburst-Ansicht sind noch keine IST-Daten vorhanden.'
+            }
+          />
+        </section>
 
         <aside className="panel panel--sidebar">
           <div className="panel__header panel__header--stacked">
@@ -624,9 +720,7 @@ export function PortfolioWorkspace({
                     value={draft.parentPath}
                     onChange={(event) => setDraft((previous) => ({ ...previous, parentPath: event.target.value }))}
                   >
-                    {isRootNodePath(selectedNode.path) ? (
-                      <option value={ROOT_NODE_PATH}>Root (fest)</option>
-                    ) : null}
+                    {isRootNodePath(selectedNode.path) ? <option value={ROOT_NODE_PATH}>Root (fest)</option> : null}
                     {parentOptions.map((entry) => (
                       <option key={entry.path} value={entry.path}>
                         {formatRelativePath(entry.path)}
@@ -639,7 +733,12 @@ export function PortfolioWorkspace({
                   <button className="button button--primary" disabled={readOnlyMode} onClick={handleSave} type="button">
                     Änderungen speichern
                   </button>
-                  <button className="button button--ghost" disabled={readOnlyMode || isRootNodePath(selectedNode.path)} onClick={handleDelete} type="button">
+                  <button
+                    className="button button--ghost"
+                    disabled={readOnlyMode || isRootNodePath(selectedNode.path)}
+                    onClick={handleDelete}
+                    type="button"
+                  >
                     Löschen
                   </button>
                 </div>
@@ -654,6 +753,7 @@ export function PortfolioWorkspace({
                 <label className="field">
                   <span>Neues Label</span>
                   <input
+                    ref={childInputRef}
                     disabled={readOnlyMode}
                     value={draft.childLabel}
                     onChange={(event) => setDraft((previous) => ({ ...previous, childLabel: event.target.value }))}
