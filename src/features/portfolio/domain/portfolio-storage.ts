@@ -124,6 +124,10 @@ function toFiniteNumber(value: number | undefined): number | undefined {
   return Number.isFinite(value ?? Number.NaN) ? value : undefined;
 }
 
+function sumLegacyChildAbsoluteTargets(children: SollNode[]): number {
+  return children.reduce((sum, child) => sum + (toFiniteNumber(child.targetPct) ?? 0), 0);
+}
+
 interface SollMigrationResult {
   node: SollNode;
   absoluteTargetPct: number;
@@ -135,8 +139,9 @@ function migrateSollNode(node: SollNode, parentAbsoluteTargetPct?: number): Soll
   const parentAbsolute = toFiniteNumber(parentAbsoluteTargetPct);
   const absoluteTargetPctFromLegacy = toFiniteNumber(node.targetPct);
   const targetPctOfParent = toFiniteNumber(node.targetPctOfParent);
+  const inferredAbsoluteTargetPct = sumLegacyChildAbsoluteTargets(node.children);
 
-  let absoluteTargetPct = isRoot ? HUNDRED : absoluteTargetPctFromLegacy ?? 0;
+  let absoluteTargetPct = isRoot ? HUNDRED : absoluteTargetPctFromLegacy ?? inferredAbsoluteTargetPct;
   let nextTargetPctOfParent = targetPctOfParent;
   let migrated = false;
 
@@ -144,9 +149,8 @@ function migrateSollNode(node: SollNode, parentAbsoluteTargetPct?: number): Soll
     absoluteTargetPct = parentAbsolute * (targetPctOfParent / HUNDRED);
   }
 
-  if (!isRoot && nextTargetPctOfParent === undefined && absoluteTargetPctFromLegacy !== undefined && parentAbsolute !== undefined && parentAbsolute !== 0) {
-    nextTargetPctOfParent = (absoluteTargetPctFromLegacy / parentAbsolute) * HUNDRED;
-    absoluteTargetPct = absoluteTargetPctFromLegacy;
+  if (!isRoot && nextTargetPctOfParent === undefined && parentAbsolute !== undefined && parentAbsolute !== 0) {
+    nextTargetPctOfParent = (absoluteTargetPct / parentAbsolute) * HUNDRED;
     migrated = true;
   }
 

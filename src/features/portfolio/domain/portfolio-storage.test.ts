@@ -114,4 +114,53 @@ describe('portfolio storage migration', () => {
     expect(loaded.error).toBeNull();
     expect(storage.writes).toBe(0);
   });
+
+  it('migrates legacy subtrees when parent targetPct is missing but children have absolute targets', () => {
+    const storage = new CountingStorage();
+
+    storage.seed(
+      PORTFOLIO_STORAGE_KEY,
+      JSON.stringify(createEnvelope({
+        path: ROOT_NODE_PATH,
+        label: 'Portfolio',
+        children: [
+          {
+            path: buildNodePath('Alternatives'),
+            label: 'Alternatives',
+            children: [
+              {
+                path: buildNodePath('Alternatives', 'Gold'),
+                label: 'Gold',
+                targetPct: 15,
+                children: [],
+              },
+              {
+                path: buildNodePath('Alternatives', 'Crypto'),
+                label: 'Crypto',
+                targetPct: 5,
+                children: [],
+              },
+            ],
+          },
+          {
+            path: buildNodePath('Cash'),
+            label: 'Cash',
+            targetPct: 80,
+            children: [],
+          },
+        ],
+      }))
+    );
+
+    const loaded = loadPortfolioStorageState(storage);
+    const alternatives = loaded.state.sollRoot?.children[0];
+    const gold = alternatives?.children[0];
+    const crypto = alternatives?.children[1];
+
+    expect(loaded.error).toBeNull();
+    expect(alternatives?.targetPctOfParent).toBeCloseTo(20, 10);
+    expect(gold?.targetPctOfParent).toBeCloseTo(75, 10);
+    expect(crypto?.targetPctOfParent).toBeCloseTo(25, 10);
+    expect(storage.writes).toBe(1);
+  });
 });

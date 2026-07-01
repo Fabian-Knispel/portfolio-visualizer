@@ -56,20 +56,20 @@
 
 ---
 
-### ✅ UX-Entscheidung 1: Parent vs Child Darstellung
+### UX-Entscheidung 1: Parent vs Child Darstellung
 - **Gewählte Variante:** A (optisch identisch)
 - **Datum:** 2026-06-21
-- **Status:** ✅ ENTSCHIEDEN
+- **Status:** ENTSCHIEDEN
 - **Dokumentation:** `docs/02-ux-entscheidungen.md`
 
-### ✅ UX-Entscheidung 2: Bewertungsdarstellung
-- **Status:** ✅ ENTSCHIEDEN & KONKRETISIERT
+### UX-Entscheidung 2: Bewertungsdarstellung
+- **Status:** ENTSCHIEDEN & KONKRETISIERT
 - **Ansatz:** Zwei orthogonale Statussysteme (Freeness + SOLL/IST), kontextgebunden pro View
 - **Datum:** 2026-06-21
 - **Dokumentation:** `docs/03-bewertungsdarstellung.md`
 
-### ✅ Architektur-/Tech-Stack-Entscheidungen (neuester Stand)
-- **Status:** ✅ ENTSCHIEDEN (Eintragungsdatum maßgeblich)
+### Architektur-/Tech-Stack-Entscheidungen (neuester Stand)
+- **Status:** ENTSCHIEDEN (Eintragungsdatum maßgeblich)
 - **Datum:** 2026-06-24
 - **Entscheidungen:**
   - Betriebsform: Lokale Web-App mit Build-Step
@@ -83,45 +83,7 @@
 
 ---
 
-## Offene Punkte (für nächste Phase)
-
-1. **MVP-Definition**
-   - Was ist in Release 1.0 enthalten?
-   - Was wird später gemacht?
-
-2. **Datenmodell-Konkretisierung**
-   - TypeScript Interfaces
-   - Funktions-Signaturen für Statusberechnung
-
-3. **Komponenten-Design**
-   - Feature-Zuschnitt (SOLL/IST/Vergleich)
-   - Tree/Sunburst-Komponentenstruktur
-   - Zustandsgrenzen und Selektoren
-
-4. **Implementierung**
-   - Projekt-Setup
-   - Basis-Rendering
-   - Berechnungs- und Statuslogik
-   - UI-Iteration
-
----
-
-## Risiken & Annahmen
-
-### Risiken
-1. **Missverständnisse durch Darstellung** — Nutzer könnte Parent-Zielwerte übersehen oder als Aggregation missdeuten  
-   - **Mitigation:** Klare Tooltips, Dokumentation, Onboarding
-
-2. **Späte UX-Komplexität** — Zu viele Farben/Signale machen die Oberfläche unleserlich  
-   - **Mitigation:** Minimalistisches Design, kontextgebundene Informationen
-
-3. **Überfrachtung der Oberfläche** — Beide Visualisierungen mit zu vielen Kategorien überladen  
-   - **Mitigation:** Nur ein Statussystem pro View aktiv
-
-4. **Fehlinterpretation von Bewertungskategorien** — Verwechslungen zwischen `underweighted`/`overweighted` oder Freeness-Signalen  
-   - **Mitigation:** Farbcodes, Randstile, Tooltips, Legenden
-
-### Annahmen
+## Annahmen
 - Anwendung nur auf dem Rechner des Nutzers, nur von ihm genutzt → Keine Sicherheits-, Compliance-, Skalierungsanforderungen
 - Fachliche Modellierung ist stabil und vollständig
 - Priorität: Stabilität, einfache Wartung, Erweiterbarkeit (nicht: Maximum-Feature-Set)
@@ -169,7 +131,8 @@ docs/
 ├── 05-TechStack.md (aktuell zu konsolidieren)
 ├── 06_Datenmodell.md (zu konkretisieren)
 ├── 07_Entscheidungsprotokoll.md (Entscheidungshistorie, zu aktualisieren)
-└── 08_noch einzupflegen.md (Zwischenspeicher, nicht normativ)
+├── 08_noch einzupflegen.md (Zwischenspeicher, nicht normativ)
+└── 09_MVP-Definition
 ```
 
 ### Nächste Meilensteine (Phasen)
@@ -177,8 +140,8 @@ docs/
 2. ✅ Phase 2: UX-Entscheidungen (2/2 getroffen)
 3. ✅ Phase 3: Architektur-Entscheidungen (getroffen)
 4. ✅ Phase 4: Tech-Stack-Entscheidungen (getroffen)
-5. [x] Phase 5: Datenmodell konkretisieren (TypeScript)
-6. [~] Phase 6: Komponenten-Design
+5. [] Phase 5: Datenmodell konkretisieren (TypeScript)
+6. [] Phase 6: Komponenten-Design
 7. [ ] Phase 7: Implementierung
 
 ---
@@ -192,5 +155,3 @@ Du übernimmst dieses Projekt an dieser Stelle. Du hast vollständigen Zugriff a
 ✅ Die Architektur-/Tech-Stack-Entscheidungen (Stand 2026-06-24)  
 ✅ Die Entscheidungsdisziplin und Regeln für Zusammenarbeit  
 ✅ Den aktuellen Status und die nächsten Schritte  
-
-**Deine nächste Aufgabe:** MVP-Definition präzisieren oder mit Datenmodell-/Komponenten-Konkretisierung fortfahren.

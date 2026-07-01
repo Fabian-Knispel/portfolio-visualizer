@@ -19,7 +19,7 @@
   --status-overweighted: #ef4444;
   --status-missing-in-ist: #94a3b8;
 
-  --sunburst-depth-1: #166534;
+  --sunburst-depth-1: #21623a;
   --sunburst-depth-2: #15803d;
   --sunburst-depth-3: #16a34a;
   --sunburst-depth-4: #4ade80;
@@ -29,7 +29,7 @@
   background: var(--bg-0);
 
   font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif;
-  line-height: 1.5;
+  line-height: 1.8;
   font-weight: 400;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
