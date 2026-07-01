@@ -220,8 +220,8 @@ function formatRelativePath(path: NodePath): string {
   return path === ROOT_NODE_PATH ? 'root' : path.replace(/^root\//, '');
 }
 
-function trimTrailingZeros(formatted: string): string {
-  return formatted.replace(/\.0+$|(?<=\.[0-9]*?)0+$/g, '').replace(/\.$/, '');
+function trimTrailingZeros(numStr: string): string {
+  return numStr.replace(/(\.[0-9]*?)0+$/, '$1').replace(/\.$/, '');
 }
 
 function formatStoredPercent(value: number | undefined): string {
@@ -230,6 +230,23 @@ function formatStoredPercent(value: number | undefined): string {
 
 function formatRatioPercent(value: number | undefined): string {
   return value === undefined ? '—' : `${trimTrailingZeros((value * 100).toFixed(2))} %`;
+}
+
+function getNumericInputError(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return null;
+  return Number.isFinite(Number(trimmed)) ? null : 'Ungültige Zahl';
+}
+
+function formatCompareStatus(status: string): string {
+  const labels: Record<string, string> = {
+    correct: '✓ Korrekt',
+    underweighted: '↓ Untergewichtet',
+    overweighted: '↑ Übergewichtet',
+    missing_in_ist: '— Fehlt im IST',
+    missing_in_soll: '— Fehlt im SOLL',
+  };
+  return labels[status] ?? status;
 }
 
 function ViewModeTab({
@@ -275,20 +292,6 @@ export function PortfolioWorkspace({
     childNumericValue: '',
   });
   const [savedAt, setSavedAt] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (savedAt === null) {
-      return;
-    }
-
-    const timeoutId = globalThis.setTimeout(() => {
-      setSavedAt(null);
-    }, 1500);
-
-    return () => {
-      globalThis.clearTimeout(timeoutId);
-    };
-  }, [savedAt]);
 
   useEffect(() => {
     if (snapshot.sollRoot === null) {
@@ -384,6 +387,12 @@ export function PortfolioWorkspace({
       parentPath,
     }));
   }, [parentPath]);
+
+  useEffect(() => {
+    if (savedAt === null) return;
+    const timer = setTimeout(() => setSavedAt(null), 1500);
+    return () => clearTimeout(timer);
+  }, [savedAt]);
 
   const selectedCompareNode = selectedNode === null ? null : findNodeByPath(snapshot.sollRoot, selectedNode.path);
   const selectedIstComputedNode =
@@ -769,14 +778,24 @@ export function PortfolioWorkspace({
                   </>
                 ) : null}
                 {activeViewMode === 'vergleich' ? (
-                  <div className="detail-card__row">
-                    <span>Vergleich</span>
-                    <strong>
-                      {compareResult === null
-                        ? '—'
-                        : `${compareResult.status} · Δ ${compareResult.deltaPctPoints.toFixed(2)} pp · IST ${formatPercentageValue(selectedIstPercent)}`}
-                    </strong>
-                  </div>
+                  <>
+                    <div className="detail-card__row">
+                      <span>Status</span>
+                      <strong>{compareResult === null ? '—' : formatCompareStatus(compareResult.status)}</strong>
+                    </div>
+                    <div className="detail-card__row">
+                      <span>IST-Anteil</span>
+                      <strong>{formatPercentageValue(selectedIstPercent)}</strong>
+                    </div>
+                    <div className="detail-card__row">
+                      <span>Abweichung</span>
+                      <strong>
+                        {compareResult === null
+                          ? '—'
+                          : `${compareResult.deltaPctPoints >= 0 ? '+' : ''}${trimTrailingZeros(compareResult.deltaPctPoints.toFixed(2))} pp`}
+                      </strong>
+                    </div>
+                  </>
                 ) : null}
               </div>
 
@@ -798,6 +817,7 @@ export function PortfolioWorkspace({
                     disabled={readOnlyMode}
                     value={draft.label}
                     onChange={(event) => setDraft((previous) => ({ ...previous, label: event.target.value }))}
+                    onKeyDown={(event) => { if (event.key === 'Enter') handleSave(); }}
                     placeholder="Knotenname"
                   />
                 </label>
@@ -805,12 +825,14 @@ export function PortfolioWorkspace({
                 <label className="field">
                   <span>{isSollMode ? 'SOLL-Ziel in %' : isIstMode ? 'IST-Wert' : 'Wert'}</span>
                   <input
+                    className={editValueValidation.error !== null ? 'field__input--error' : undefined}
                     disabled={readOnlyMode}
                     inputMode="decimal"
                     value={draft.numericValue}
                     aria-invalid={editValueValidation.error !== null}
                     aria-describedby={editValueValidation.error !== null ? 'edit-numeric-error' : undefined}
                     onChange={(event) => setDraft((previous) => ({ ...previous, numericValue: event.target.value }))}
+                    onKeyDown={(event) => { if (event.key === 'Enter') handleSave(); }}
                     placeholder={isSollMode ? 'z. B. 25' : 'z. B. 1000'}
                   />
                 </label>
@@ -870,6 +892,7 @@ export function PortfolioWorkspace({
                     disabled={readOnlyMode}
                     value={draft.childLabel}
                     onChange={(event) => setDraft((previous) => ({ ...previous, childLabel: event.target.value }))}
+                    onKeyDown={(event) => { if (event.key === 'Enter') handleAddChild(); }}
                     placeholder="z. B. USA"
                   />
                 </label>
@@ -877,12 +900,14 @@ export function PortfolioWorkspace({
                 <label className="field">
                   <span>{isSollMode ? 'Neues SOLL-Ziel in %' : isIstMode ? 'Neuer IST-Wert' : 'Wert'}</span>
                   <input
+                    className={childValueValidation.error !== null ? 'field__input--error' : undefined}
                     disabled={readOnlyMode}
                     inputMode="decimal"
                     value={draft.childNumericValue}
                     aria-invalid={childValueValidation.error !== null}
                     aria-describedby={childValueValidation.error !== null ? 'child-numeric-error' : undefined}
                     onChange={(event) => setDraft((previous) => ({ ...previous, childNumericValue: event.target.value }))}
+                    onKeyDown={(event) => { if (event.key === 'Enter') handleAddChild(); }}
                     placeholder={isSollMode ? 'z. B. 15' : 'z. B. 250'}
                   />
                 </label>
