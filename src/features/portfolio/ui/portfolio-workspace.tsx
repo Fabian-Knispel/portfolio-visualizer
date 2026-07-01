@@ -320,15 +320,16 @@ export function PortfolioWorkspace() {
   const selectedCompareNode = selectedNode === null ? null : findNodeByPath(snapshot.sollRoot, selectedNode.path);
   const selectedIstNode = selectedNode === null ? null : findNodeByPath(snapshot.istRoot, selectedNode.path);
 
-  const compareResult =
-    activeViewMode !== 'vergleich' || selectedCompareNode === null || selectedIstNode === null
-      ? null
-      : computeCompareStatus(selectedCompareNode.path, (selectedCompareNode as SollNode).targetPct ?? 0, (selectedIstNode as IstNode).ownValue ?? 0);
-
   const selectedIstComputedNode =
     activeViewMode !== 'ist' || istComputedRoot === null || selectedNode === null
       ? null
       : findNodeByPath(istComputedRoot, selectedNode.path);
+  const selectedIstPercent = selectedIstComputedNode?.pctTotal;
+
+  const compareResult =
+    activeViewMode !== 'vergleich' || selectedCompareNode === null || selectedIstPercent === undefined
+      ? null
+      : computeCompareStatus(selectedCompareNode.path, (selectedCompareNode as SollNode).targetPct ?? 0, selectedIstPercent);
 
   function updateSelectedPath(path: NodePath): void {
     setSelectedPaths((previous) => ({
@@ -529,7 +530,7 @@ export function PortfolioWorkspace() {
                     <strong>
                       {compareResult === null
                         ? '—'
-                        : `${compareResult.status} · Δ ${compareResult.deltaPctPoints.toFixed(2)} pp`}
+                        : `${compareResult.status} · Δ ${compareResult.deltaPctPoints.toFixed(2)} pp · IST ${formatPercent(selectedIstPercent)}`}
                     </strong>
                   </div>
                 ) : null}
