@@ -1,12 +1,22 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  appendNodeToTree,
+  buildCompareRows,
+  buildNodePath,
+  computeCompareStatus,
   computePercentageValues,
+  computeSollPercentages,
+  findNodeByPath,
   formatPercentageValue,
   computeIstNodeValues,
   computeIstPercentages,
   type IstNode,
+  type SollNode,
   ROOT_NODE_PATH,
+  moveNodeInTree,
+  removeNodeFromTree,
+  updateNodeInTree,
 } from './portfolio-model';
 
 function createStandardIstTree(): IstNode {
@@ -52,6 +62,55 @@ function createZeroTotalIstTree(): IstNode {
       {
         path: 'root/Cash',
         label: 'Cash',
+        children: [],
+      },
+    ],
+  };
+}
+
+function createSollTree(): SollNode {
+  return {
+    path: ROOT_NODE_PATH,
+    label: 'Portfolio',
+    children: [
+      {
+        path: buildNodePath('Equity'),
+        label: 'Equity',
+        targetPct: 60,
+        children: [
+          {
+            path: buildNodePath('Equity', 'USA'),
+            label: 'USA',
+            targetPct: 30,
+            children: [],
+          },
+        ],
+      },
+      {
+        path: buildNodePath('Cash'),
+        label: 'Cash',
+        targetPct: 40,
+        children: [],
+      },
+    ],
+  };
+}
+
+function createIstTreeForCompare(): IstNode {
+  return {
+    path: ROOT_NODE_PATH,
+    label: 'Portfolio',
+    children: [
+      {
+        path: buildNodePath('Equity'),
+        label: 'Equity',
+        ownValue: 700,
+        children: [],
+      },
+      {
+        path: buildNodePath('Bonds'),
+        label: 'Bonds',
+        ownValue: 300,
         children: [],
       },
     ],
@@ -160,5 +219,157 @@ describe('formatPercentageValue', () => {
 
   it('supports custom display precision', () => {
     expect(formatPercentageValue(0.125, 1)).toBe('12.5 %');
+  });
+});
+
+describe('tree operations', () => {
+  it('finds nodes by path and returns null for missing paths', () => {
+    const root = createSollTree();
+
+    expect(findNodeByPath(root, buildNodePath('Equity'))?.label).toBe('Equity');
+    expect(findNodeByPath(root, buildNodePath('Missing'))).toBeNull();
+  });
+
+  it('updates a single node and keeps untouched trees referentially stable on missing paths', () => {
+    const root = createSollTree();
+    const updated = updateNodeInTree(root, buildNodePath('Cash'), (node) => ({
+      ...node,
+      targetPct: 35,
+    }));
+
+    expect(findNodeByPath(updated, buildNodePath('Cash'))?.targetPct).toBe(35);
+    expect(findNodeByPath(root, buildNodePath('Cash'))?.targetPct).toBe(40);
+
+    const unchanged = updateNodeInTree(root, buildNodePath('Missing'), (node) => ({
+      ...node,
+      label: 'Never reached',
+    }));
+
+    expect(unchanged).toBe(root);
+  });
+
+  it('removes existing nodes but never removes the technical root', () => {
+    const root = createSollTree();
+    const withoutUsa = removeNodeFromTree(root, buildNodePath('Equity', 'USA'));
+
+    expect(findNodeByPath(withoutUsa, buildNodePath('Equity', 'USA'))).toBeNull();
+
+    const withoutRoot = removeNodeFromTree(root, ROOT_NODE_PATH);
+    expect(withoutRoot).toBe(root);
+  });
+
+  it('appends nodes and rejects invalid parent, duplicate path, and cycle-like insertions', () => {
+    const root = createSollTree();
+
+    const appended = appendNodeToTree(root, buildNodePath('Equity'), {
+      path: buildNodePath('Equity', 'EM'),
+      label: 'EM',
+      targetPct: 10,
+      children: [],
+    });
+    expect(findNodeByPath(appended, buildNodePath('Equity', 'EM'))?.label).toBe('EM');
+
+    const missingParent = appendNodeToTree(root, buildNodePath('Missing'), {
+      path: buildNodePath('Missing', 'Child'),
+      label: 'Child',
+      targetPct: 1,
+      children: [],
+    });
+    expect(missingParent).toBe(root);
+
+    const duplicatePath = appendNodeToTree(root, ROOT_NODE_PATH, {
+      path: buildNodePath('Cash'),
+      label: 'Duplicate Cash',
+      targetPct: 5,
+      children: [],
+    });
+    expect(duplicatePath).toBe(root);
+
+    const cycleLikeChild: SollNode = {
+      path: buildNodePath('Temp'),
+      label: 'Temp',
+      targetPct: 5,
+      children: [
+        {
+          path: buildNodePath('Equity', 'USA'),
+          label: 'Cycle Reference',
+          targetPct: 5,
+          children: [],
+        },
+      ],
+    };
+    const cycleRejected = appendNodeToTree(root, buildNodePath('Equity', 'USA'), cycleLikeChild);
+    expect(cycleRejected).toBe(root);
+  });
+
+  it('moves nodes and rejects invalid move operations including subtree cycles', () => {
+    const root = createSollTree();
+
+    const moved = moveNodeInTree(root, buildNodePath('Equity', 'USA'), ROOT_NODE_PATH);
+    expect(findNodeByPath(moved, buildNodePath('Equity', 'USA'))).not.toBeNull();
+    expect(findNodeByPath(moved, buildNodePath('Equity'))?.children).toHaveLength(0);
+
+    expect(moveNodeInTree(root, ROOT_NODE_PATH, buildNodePath('Cash'))).toBe(root);
+    expect(moveNodeInTree(root, buildNodePath('Equity'), buildNodePath('Equity', 'USA'))).toBe(root);
+    expect(moveNodeInTree(root, buildNodePath('Missing'), ROOT_NODE_PATH)).toBe(root);
+    expect(moveNodeInTree(root, buildNodePath('Cash'), buildNodePath('Missing'))).toBe(root);
+  });
+});
+
+describe('SOLL percentages and status derivations', () => {
+  it('computes effective SOLL percentages for root and children', () => {
+    const computed = computeSollPercentages(createSollTree());
+    const equity = computed.children[0];
+    const usa = equity.children[0];
+
+    expect(computed.pctTotal).toBe(1);
+    expect(computed.pctOfParent).toBeUndefined();
+    expect(equity.pctTotal).toBeCloseTo(0.6, 10);
+    expect(equity.pctOfParent).toBeCloseTo(0.6, 10);
+    expect(usa.pctTotal).toBeCloseTo(0.3, 10);
+    expect(usa.pctOfParent).toBeCloseTo(0.5, 10);
+  });
+
+  it('derives compare statuses including epsilon-stable equality and missing cases', () => {
+    expect(computeCompareStatus('root/A', 0.4, 0.4)).toMatchObject({ status: 'correct' });
+    expect(computeCompareStatus('root/A', 0.4, 0.3999999999996)).toMatchObject({ status: 'correct' });
+    expect(computeCompareStatus('root/A', 0.4, 0.3)).toMatchObject({ status: 'underweighted' });
+    expect(computeCompareStatus('root/A', 0.4, 0.5)).toMatchObject({ status: 'overweighted' });
+    expect(computeCompareStatus('root/A', 0.4, 0)).toMatchObject({ status: 'missing_in_ist' });
+  });
+});
+
+describe('compare rows', () => {
+  it('builds deterministic SOLL-vs-IST compare rows including missing nodes in both directions', () => {
+    const sollRoot = createSollTree();
+    const istRoot = computeIstPercentages(computeIstNodeValues(createIstTreeForCompare()));
+    const rows = buildCompareRows(sollRoot, istRoot);
+
+    const equity = rows.find((row) => row.path === buildNodePath('Equity'));
+    const cash = rows.find((row) => row.path === buildNodePath('Cash'));
+    const bonds = rows.find((row) => row.path === buildNodePath('Bonds'));
+
+    expect(rows[0].path).toBe(ROOT_NODE_PATH);
+    expect(rows[0].status).toBe('correct');
+
+    expect(equity).toMatchObject({
+      label: 'Equity',
+      depth: 1,
+      sollTargetPct: 0.6,
+      status: 'overweighted',
+    });
+    expect(equity?.istPct).toBeCloseTo(0.7, 10);
+
+    expect(cash).toMatchObject({
+      status: 'missing_in_ist',
+      sollTargetPct: 0.4,
+      istPct: 0,
+    });
+
+    expect(bonds).toMatchObject({
+      status: 'missing_in_soll',
+      sollTargetPct: 0,
+    });
+    expect(bonds?.istPct).toBeCloseTo(0.3, 10);
   });
 });

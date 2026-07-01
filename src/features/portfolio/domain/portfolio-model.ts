@@ -25,6 +25,14 @@ export interface IstComputedNode extends PortfolioNodeBase<IstComputedNode> {
   pctOfParent?: number;
 }
 
+export interface SollComputedNode extends PortfolioNodeBase<SollComputedNode> {
+  targetPct?: number;
+  pctTotal: number;
+  pctOfParent?: number;
+}
+
+export type PortfolioTab = 'soll' | 'ist' | 'vergleich';
+
 export type FreenessStatus = 'correct' | 'free' | 'overallocated';
 
 export type CompareStatus = 'correct' | 'underweighted' | 'overweighted' | 'missing_in_ist' | 'missing_in_soll';
@@ -35,6 +43,11 @@ export interface CompareResult {
   istPct: number;
   deltaPctPoints: number;
   status: CompareStatus;
+}
+
+export interface CompareRow extends CompareResult {
+  label: string;
+  depth: number;
 }
 
 export interface FreenessResult {
@@ -49,10 +62,12 @@ export type TreeNodeUpdater<TNode extends PortfolioNodeBase<TNode>> = (node: TNo
 export interface PortfolioState {
   sollRoot: SollNode | null;
   istRoot: IstNode | null;
-  activeViewMode: 'soll' | 'ist' | 'vergleich';
+  activeViewMode: PortfolioTab;
 }
 
 const ZERO = 0;
+const HUNDRED = 100;
+const EPSILON = 1e-9;
 export const DEFAULT_PERCENTAGE_DIGITS = 2 as const;
 
 function normalizeNumber(value: number | undefined): number {
@@ -61,6 +76,14 @@ function normalizeNumber(value: number | undefined): number {
 
 function computePercentageValue(numerator: number, denominator: number): number {
   return denominator === ZERO ? ZERO : numerator / denominator;
+}
+
+function areNumbersEqual(left: number, right: number): boolean {
+  return Math.abs(left - right) <= EPSILON;
+}
+
+function toRatioPercentage(value: number | undefined): number {
+  return normalizeNumber(value) / HUNDRED;
 }
 
 export interface ComputedPercentageValues {
@@ -152,38 +175,156 @@ function isPathInsideSubtree(rootPath: NodePath, candidatePath: NodePath): boole
   return candidatePath === rootPath || candidatePath.startsWith(`${rootPath}/`);
 }
 
+function collectNodePaths<TNode extends PortfolioNodeBase<TNode>>(node: TNode): Set<NodePath> {
+  const paths = new Set<NodePath>();
+
+  function visit(currentNode: TNode): void {
+    paths.add(currentNode.path);
+    currentNode.children.forEach(visit);
+  }
+
+  visit(node);
+
+  return paths;
+}
+
+export function findNodeByPath<TNode extends PortfolioNodeBase<TNode>>(root: TNode, path: NodePath): TNode | null {
+  return findNodeInTree(root, path);
+}
+
+function updateNodeInTreeInternal<TNode extends PortfolioNodeBase<TNode>>(
+  root: TNode,
+  path: NodePath,
+  updater: TreeNodeUpdater<TNode>
+): { nextNode: TNode; changed: boolean } {
+  if (root.path === path) {
+    return {
+      nextNode: updater(root),
+      changed: true,
+    };
+  }
+
+  let hasChanged = false;
+  const nextChildren = root.children.map((child) => {
+    const result = updateNodeInTreeInternal(child, path, updater);
+
+    if (result.changed) {
+      hasChanged = true;
+    }
+
+    return result.nextNode;
+  });
+
+  if (!hasChanged) {
+    return {
+      nextNode: root,
+      changed: false,
+    };
+  }
+
+  return {
+    nextNode: {
+      ...root,
+      children: nextChildren,
+    },
+    changed: true,
+  };
+}
+
 export function updateNodeInTree<TNode extends PortfolioNodeBase<TNode>>(
   root: TNode,
   path: NodePath,
   updater: TreeNodeUpdater<TNode>
 ): TNode {
-  if (root.path === path) {
-    return updater(root);
-  }
-
-  return {
-    ...root,
-    children: root.children.map((child) => updateNodeInTree(child, path, updater)),
-  };
+  return updateNodeInTreeInternal(root, path, updater).nextNode;
 }
 
-function removeNodeInTree<TNode extends PortfolioNodeBase<TNode>>(root: TNode, path: NodePath): TNode | null {
+function removeNodeInTreeInternal<TNode extends PortfolioNodeBase<TNode>>(
+  root: TNode,
+  path: NodePath
+): { nextNode: TNode | null; changed: boolean } {
   if (root.path === path) {
-    return isRootNodePath(path) ? root : null;
+    return {
+      nextNode: isRootNodePath(path) ? root : null,
+      changed: !isRootNodePath(path),
+    };
   }
 
-  const nextChildren = root.children
-    .map((child) => removeNodeInTree(child, path))
-    .filter((child): child is TNode => child !== null);
+  let hasChanged = false;
+  const nextChildren: TNode[] = [];
+
+  root.children.forEach((child) => {
+    const result = removeNodeInTreeInternal(child, path);
+
+    if (result.changed) {
+      hasChanged = true;
+    }
+
+    if (result.nextNode !== null) {
+      nextChildren.push(result.nextNode);
+    }
+  });
+
+  if (!hasChanged) {
+    return {
+      nextNode: root,
+      changed: false,
+    };
+  }
 
   return {
-    ...root,
-    children: nextChildren,
+    nextNode: {
+      ...root,
+      children: nextChildren,
+    },
+    changed: true,
   };
 }
 
 export function removeNodeFromTree<TNode extends PortfolioNodeBase<TNode>>(root: TNode, path: NodePath): TNode {
-  return removeNodeInTree(root, path) ?? root;
+  return removeNodeInTreeInternal(root, path).nextNode ?? root;
+}
+
+function appendNodeToTreeInternal<TNode extends PortfolioNodeBase<TNode>>(
+  root: TNode,
+  parentPath: NodePath,
+  childNode: TNode
+): { nextNode: TNode; changed: boolean } {
+  if (root.path === parentPath) {
+    return {
+      nextNode: {
+        ...root,
+        children: [...root.children, childNode],
+      },
+      changed: true,
+    };
+  }
+
+  let hasChanged = false;
+  const nextChildren = root.children.map((child) => {
+    const result = appendNodeToTreeInternal(child, parentPath, childNode);
+
+    if (result.changed) {
+      hasChanged = true;
+    }
+
+    return result.nextNode;
+  });
+
+  if (!hasChanged) {
+    return {
+      nextNode: root,
+      changed: false,
+    };
+  }
+
+  return {
+    nextNode: {
+      ...root,
+      children: nextChildren,
+    },
+    changed: true,
+  };
 }
 
 export function appendNodeToTree<TNode extends PortfolioNodeBase<TNode>>(
@@ -191,17 +332,23 @@ export function appendNodeToTree<TNode extends PortfolioNodeBase<TNode>>(
   parentPath: NodePath,
   childNode: TNode
 ): TNode {
-  if (root.path === parentPath) {
-    return {
-      ...root,
-      children: [...root.children, childNode],
-    };
+  const parentNode = findNodeInTree(root, parentPath);
+
+  if (parentNode === null) {
+    return root;
   }
 
-  return {
-    ...root,
-    children: root.children.map((child) => appendNodeToTree(child, parentPath, childNode)),
-  };
+  if (findNodeInTree(root, childNode.path) !== null) {
+    return root;
+  }
+
+  const childSubtreePaths = collectNodePaths(childNode);
+
+  if (childSubtreePaths.has(parentPath)) {
+    return root;
+  }
+
+  return appendNodeToTreeInternal(root, parentPath, childNode).nextNode;
 }
 
 export function moveNodeInTree<TNode extends PortfolioNodeBase<TNode>>(
@@ -232,6 +379,27 @@ export function computeIstPercentages(root: IstComputedNode): IstComputedNode {
   return annotateIstPercentages(root, root.nodeValue);
 }
 
+export function computeSollPercentages(root: SollNode): SollComputedNode {
+  function annotate(node: SollNode, parentPctTotal?: number): SollComputedNode {
+    const pctTotal = isRootNodePath(node.path)
+      ? 1
+      : toRatioPercentage(node.targetPct);
+
+    const pctOfParent = parentPctTotal === undefined || parentPctTotal === ZERO
+      ? undefined
+      : computePercentageValue(pctTotal, parentPctTotal);
+
+    return {
+      ...node,
+      pctTotal,
+      pctOfParent,
+      children: node.children.map((child) => annotate(child, pctTotal)),
+    };
+  }
+
+  return annotate(root);
+}
+
 export function computeFreenessStatus(node: SollNode): FreenessResult | null {
   if (node.children.length === 0) {
     return null;
@@ -242,9 +410,9 @@ export function computeFreenessStatus(node: SollNode): FreenessResult | null {
 
   let status: FreenessStatus = 'correct';
 
-  if (childrenTargetSumPct < parentTargetPct) {
+  if (childrenTargetSumPct < parentTargetPct && !areNumbersEqual(childrenTargetSumPct, parentTargetPct)) {
     status = 'free';
-  } else if (childrenTargetSumPct > parentTargetPct) {
+  } else if (childrenTargetSumPct > parentTargetPct && !areNumbersEqual(childrenTargetSumPct, parentTargetPct)) {
     status = 'overallocated';
   }
 
@@ -259,11 +427,11 @@ export function computeFreenessStatus(node: SollNode): FreenessResult | null {
 export function computeCompareStatus(path: NodePath, sollTargetPct: number, istPct: number): CompareResult {
   let status: CompareStatus = 'correct';
 
-  if (istPct === ZERO && sollTargetPct > ZERO) {
+  if (areNumbersEqual(istPct, ZERO) && sollTargetPct > ZERO && !areNumbersEqual(sollTargetPct, ZERO)) {
     status = 'missing_in_ist';
-  } else if (istPct < sollTargetPct) {
+  } else if (istPct < sollTargetPct && !areNumbersEqual(istPct, sollTargetPct)) {
     status = 'underweighted';
-  } else if (istPct > sollTargetPct) {
+  } else if (istPct > sollTargetPct && !areNumbersEqual(istPct, sollTargetPct)) {
     status = 'overweighted';
   }
 
@@ -274,6 +442,82 @@ export function computeCompareStatus(path: NodePath, sollTargetPct: number, istP
     deltaPctPoints: istPct - sollTargetPct,
     status,
   };
+}
+
+interface FlatTreeEntry<TNode extends PortfolioNodeBase<TNode>> {
+  node: TNode;
+  depth: number;
+}
+
+function flattenTree<TNode extends PortfolioNodeBase<TNode>>(root: TNode): FlatTreeEntry<TNode>[] {
+  const entries: FlatTreeEntry<TNode>[] = [];
+
+  function walk(node: TNode, depth: number): void {
+    entries.push({ node, depth });
+    node.children.forEach((child) => walk(child, depth + 1));
+  }
+
+  walk(root, 0);
+
+  return entries;
+}
+
+export function buildCompareRows(sollRoot: SollNode | null, istRoot: IstComputedNode | null): CompareRow[] {
+  const sollEntries = sollRoot === null ? [] : flattenTree(sollRoot);
+  const istEntries = istRoot === null ? [] : flattenTree(istRoot);
+
+  const sollMap = new Map<NodePath, FlatTreeEntry<SollNode>>();
+  const istMap = new Map<NodePath, FlatTreeEntry<IstComputedNode>>();
+
+  sollEntries.forEach((entry) => {
+    sollMap.set(entry.node.path, entry);
+  });
+
+  istEntries.forEach((entry) => {
+    istMap.set(entry.node.path, entry);
+  });
+
+  const orderedPaths: NodePath[] = [
+    ...sollEntries.map((entry) => entry.node.path),
+    ...istEntries
+      .map((entry) => entry.node.path)
+      .filter((path) => !sollMap.has(path)),
+  ];
+
+  return orderedPaths.map((path) => {
+    const sollEntry = sollMap.get(path);
+    const istEntry = istMap.get(path);
+    const label = sollEntry?.node.label ?? istEntry?.node.label ?? path;
+    const depth = sollEntry?.depth ?? istEntry?.depth ?? 0;
+
+    if (sollEntry === undefined && istEntry !== undefined) {
+      const istPct = istEntry.node.pctTotal;
+
+      return {
+        path,
+        label,
+        depth,
+        sollTargetPct: ZERO,
+        istPct,
+        deltaPctPoints: istPct,
+        status: 'missing_in_soll',
+      };
+    }
+
+    const sollTargetPct = sollEntry === undefined
+      ? ZERO
+      : isRootNodePath(path)
+        ? 1
+        : toRatioPercentage(sollEntry.node.targetPct);
+    const istPct = istEntry?.node.pctTotal ?? ZERO;
+    const compare = computeCompareStatus(path, sollTargetPct, istPct);
+
+    return {
+      ...compare,
+      label,
+      depth,
+    };
+  });
 }
 
 export const exampleSollHierarchy: SollNode = {
