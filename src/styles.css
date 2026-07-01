@@ -203,7 +203,9 @@ button {
 }
 
 .tree-node {
-  width: 100%;
+  width: calc(100% - var(--tree-indent, 0px));
+  max-width: 100%;
+  margin-inline-start: var(--tree-indent, 0px);
   display: grid;
   grid-template-columns: 24px minmax(0, 1fr) auto;
   gap: 8px;

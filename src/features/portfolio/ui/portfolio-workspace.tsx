@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import type { JSX } from 'react';
+import type { CSSProperties, JSX } from 'react';
 
 import {
   ROOT_NODE_PATH,
@@ -489,13 +489,17 @@ export function PortfolioWorkspace({
     const isExpandable = node.children.length > 0;
     const isCollapsed = collapsedTreeNodes[node.path] === true;
     const presentation = getTreeNodePresentation(node);
+    const indent = Math.min(depth * 14, 56);
+    const treeNodeStyle = {
+      ['--tree-indent' as string]: `${indent}px`,
+    } as CSSProperties;
 
     return (
       <li key={node.path} className="tree-list__item">
         <div
           className={`tree-node ${isSelected ? 'tree-node--selected' : ''}`}
           data-status={presentation.status}
-          style={{ marginInlineStart: Math.min(depth * 14, 56) }}
+          style={treeNodeStyle}
         >
           <button
             aria-label={isCollapsed ? 'Knoten aufklappen' : 'Knoten einklappen'}
