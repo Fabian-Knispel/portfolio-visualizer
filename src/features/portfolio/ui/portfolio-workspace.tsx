@@ -178,12 +178,33 @@ function formatRelativePath(path: NodePath): string {
   return path === ROOT_NODE_PATH ? 'root' : path.replace(/^root\//, '');
 }
 
+function trimTrailingZeros(numStr: string): string {
+  return numStr.replace(/(\.[0-9]*?)0+$/, '$1').replace(/\.$/, '');
+}
+
 function formatStoredPercent(value: number | undefined): string {
-  return value === undefined ? '—' : `${value.toFixed(2)} %`;
+  return value === undefined ? '—' : `${trimTrailingZeros(value.toFixed(2))} %`;
 }
 
 function formatRatioPercent(value: number | undefined): string {
-  return value === undefined ? '—' : `${(value * 100).toFixed(2)} %`;
+  return value === undefined ? '—' : `${trimTrailingZeros((value * 100).toFixed(2))} %`;
+}
+
+function getNumericInputError(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return null;
+  return Number.isFinite(Number(trimmed)) ? null : 'Ungültige Zahl';
+}
+
+function formatCompareStatus(status: string): string {
+  const labels: Record<string, string> = {
+    correct: '✓ Korrekt',
+    underweighted: '↓ Untergewichtet',
+    overweighted: '↑ Übergewichtet',
+    missing_in_ist: '— Fehlt im IST',
+    missing_in_soll: '— Fehlt im SOLL',
+  };
+  return labels[status] ?? status;
 }
 
 function ViewModeTab({
@@ -228,6 +249,7 @@ export function PortfolioWorkspace({
     childLabel: '',
     childNumericValue: '',
   });
+  const [savedAt, setSavedAt] = useState<number | null>(null);
 
   useEffect(() => {
     if (snapshot.sollRoot === null) {
@@ -323,6 +345,12 @@ export function PortfolioWorkspace({
       parentPath,
     }));
   }, [parentPath]);
+
+  useEffect(() => {
+    if (savedAt === null) return;
+    const timer = setTimeout(() => setSavedAt(null), 1500);
+    return () => clearTimeout(timer);
+  }, [savedAt]);
 
   const selectedCompareNode = selectedNode === null ? null : findNodeByPath(snapshot.sollRoot, selectedNode.path);
   const selectedIstComputedNode =
@@ -490,6 +518,8 @@ export function PortfolioWorkspace({
         ownValue: parseOptionalNumber(draft.numericValue),
       }));
     }
+
+    setSavedAt(Date.now());
   }
 
   function handleAddChild(): void {
@@ -550,6 +580,8 @@ export function PortfolioWorkspace({
   const readOnlyMode = activeViewMode === 'vergleich';
   const isIstMode = activeViewMode === 'ist';
   const isSollMode = activeViewMode === 'soll';
+  const editNumericError = getNumericInputError(draft.numericValue);
+  const childNumericError = getNumericInputError(draft.childNumericValue);
   const treePanelTitle = activeViewMode === 'vergleich' ? 'VERGLEICH-PORTFOLIO' : `${activeViewMode.toUpperCase()}-PORTFOLIO`;
   const sunburstCollapseLabel = areAllTreeNodesCollapsed ? 'Alle ausklappen' : 'Alle einklappen';
 
@@ -674,14 +706,24 @@ export function PortfolioWorkspace({
                   </>
                 ) : null}
                 {activeViewMode === 'vergleich' ? (
-                  <div className="detail-card__row">
-                    <span>Vergleich</span>
-                    <strong>
-                      {compareResult === null
-                        ? '—'
-                        : `${compareResult.status} · Δ ${compareResult.deltaPctPoints.toFixed(2)} pp · IST ${formatPercentageValue(selectedIstPercent)}`}
-                    </strong>
-                  </div>
+                  <>
+                    <div className="detail-card__row">
+                      <span>Status</span>
+                      <strong>{compareResult === null ? '—' : formatCompareStatus(compareResult.status)}</strong>
+                    </div>
+                    <div className="detail-card__row">
+                      <span>IST-Anteil</span>
+                      <strong>{formatPercentageValue(selectedIstPercent)}</strong>
+                    </div>
+                    <div className="detail-card__row">
+                      <span>Abweichung</span>
+                      <strong>
+                        {compareResult === null
+                          ? '—'
+                          : `${compareResult.deltaPctPoints >= 0 ? '+' : ''}${trimTrailingZeros(compareResult.deltaPctPoints.toFixed(2))} pp`}
+                      </strong>
+                    </div>
+                  </>
                 ) : null}
               </div>
 
@@ -697,6 +739,7 @@ export function PortfolioWorkspace({
                     disabled={readOnlyMode}
                     value={draft.label}
                     onChange={(event) => setDraft((previous) => ({ ...previous, label: event.target.value }))}
+                    onKeyDown={(event) => { if (event.key === 'Enter') handleSave(); }}
                     placeholder="Knotenname"
                   />
                 </label>
@@ -704,12 +747,17 @@ export function PortfolioWorkspace({
                 <label className="field">
                   <span>{isSollMode ? 'SOLL-Ziel in %' : isIstMode ? 'IST-Wert' : 'Wert'}</span>
                   <input
+                    className={editNumericError !== null ? 'field__input--error' : undefined}
                     disabled={readOnlyMode}
                     inputMode="decimal"
                     value={draft.numericValue}
                     onChange={(event) => setDraft((previous) => ({ ...previous, numericValue: event.target.value }))}
+                    onKeyDown={(event) => { if (event.key === 'Enter') handleSave(); }}
                     placeholder={isSollMode ? 'z. B. 25' : 'z. B. 1000'}
                   />
+                  {editNumericError !== null && (
+                    <span className="field__error" role="alert">{editNumericError}</span>
+                  )}
                 </label>
 
                 <label className="field">
@@ -729,8 +777,13 @@ export function PortfolioWorkspace({
                 </label>
 
                 <div className="form-actions">
-                  <button className="button button--primary" disabled={readOnlyMode} onClick={handleSave} type="button">
-                    Änderungen speichern
+                  <button
+                    className={`button ${savedAt !== null ? 'button--saved' : 'button--primary'}`}
+                    disabled={readOnlyMode}
+                    onClick={handleSave}
+                    type="button"
+                  >
+                    {savedAt !== null ? 'Gespeichert ✓' : 'Änderungen speichern'}
                   </button>
                   <button
                     className="button button--ghost"
@@ -756,6 +809,7 @@ export function PortfolioWorkspace({
                     disabled={readOnlyMode}
                     value={draft.childLabel}
                     onChange={(event) => setDraft((previous) => ({ ...previous, childLabel: event.target.value }))}
+                    onKeyDown={(event) => { if (event.key === 'Enter') handleAddChild(); }}
                     placeholder="z. B. USA"
                   />
                 </label>
@@ -763,12 +817,17 @@ export function PortfolioWorkspace({
                 <label className="field">
                   <span>{isSollMode ? 'Neues SOLL-Ziel in %' : isIstMode ? 'Neuer IST-Wert' : 'Wert'}</span>
                   <input
+                    className={childNumericError !== null ? 'field__input--error' : undefined}
                     disabled={readOnlyMode}
                     inputMode="decimal"
                     value={draft.childNumericValue}
                     onChange={(event) => setDraft((previous) => ({ ...previous, childNumericValue: event.target.value }))}
+                    onKeyDown={(event) => { if (event.key === 'Enter') handleAddChild(); }}
                     placeholder={isSollMode ? 'z. B. 15' : 'z. B. 250'}
                   />
+                  {childNumericError !== null && (
+                    <span className="field__error" role="alert">{childNumericError}</span>
+                  )}
                 </label>
 
                 <button className="button button--primary" disabled={readOnlyMode} onClick={handleAddChild} type="button">
