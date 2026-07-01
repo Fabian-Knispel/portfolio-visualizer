@@ -72,5 +72,5 @@ UX:
 - Für Root-Knoten wird `Anteil am Parent` als **„—“** dargestellt.
 - Edge Case `totalValue = 0`:
   - Keine Division durch 0
-  - Prozentanzeigen in IST als **0,00 %** (alternativ „—“, falls bevorzugt – bitte einheitlich)
+  - Prozentanzeigen in IST als **0,00 %**
 - Sunburst und Baumansicht verwenden dieselbe zentrale Berechnungslogik für Prozentwerte.

@@ -53,9 +53,43 @@ export interface PortfolioState {
 }
 
 const ZERO = 0;
+export const DEFAULT_PERCENTAGE_DIGITS = 2 as const;
 
 function normalizeNumber(value: number | undefined): number {
   return Number.isFinite(value ?? Number.NaN) ? (value as number) : ZERO;
+}
+
+function computePercentageValue(numerator: number, denominator: number): number {
+  return denominator === ZERO ? ZERO : numerator / denominator;
+}
+
+export interface ComputedPercentageValues {
+  pctTotal: number;
+  pctOfParent?: number;
+}
+
+export function computePercentageValues(
+  nodeValue: number,
+  totalValue: number,
+  parentNodeValue?: number
+): ComputedPercentageValues {
+  const pctTotal = computePercentageValue(nodeValue, totalValue);
+  const pctOfParent = parentNodeValue === undefined || parentNodeValue === ZERO
+    ? undefined
+    : computePercentageValue(nodeValue, parentNodeValue);
+
+  return {
+    pctTotal,
+    pctOfParent,
+  };
+}
+
+export function formatPercentageValue(value: number | undefined, digits: number = DEFAULT_PERCENTAGE_DIGITS): string {
+  if (value === undefined) {
+    return '—';
+  }
+
+  return `${(value * 100).toFixed(digits)} %`;
 }
 
 function computeIstNodeValuesInternal(node: IstNode): IstComputedNode {
@@ -74,8 +108,7 @@ function computeIstNodeValuesInternal(node: IstNode): IstComputedNode {
 }
 
 function annotateIstPercentages(node: IstComputedNode, totalValue: number, parentNodeValue?: number): IstComputedNode {
-  const pctTotal = totalValue === ZERO ? ZERO : node.nodeValue / totalValue;
-  const pctOfParent = parentNodeValue === undefined || parentNodeValue === ZERO ? undefined : node.nodeValue / parentNodeValue;
+  const { pctTotal, pctOfParent } = computePercentageValues(node.nodeValue, totalValue, parentNodeValue);
 
   return {
     ...node,

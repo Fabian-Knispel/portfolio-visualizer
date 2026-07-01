@@ -22,6 +22,7 @@ Bei Konflikten zwischen Dokumenten gilt: **Eintragungsdatum im Protokoll + norma
 | 2026-06-30 | Store | Portfolio-Store lädt beim Initialisieren und persistiert jede fachliche Mutation unmittelbar | Garantiert Reload-Erhalt und hält die UI nur als Ableitung des fachlichen Zustands | Entschieden |
 | 2026-06-30 | Store-API | Pfadbasierte Tree-Mutationen (`add`, `update`, `move`, `remove`) werden direkt im Store angeboten | Macht fachliche Änderungen unmittelbar speicherbar ohne UI-Duplikation der Persistenzlogik | Entschieden |
 | 2026-06-30 | UX | Knotenbearbeitung erfolgt über einen Seitenbereich statt inline; Parent-Wechsel und Root-Umbenennung sind dort ausdrücklich enthalten | Bessere Übersicht bei tiefen Hierarchien und mehreren Bearbeitungsfeldern | Entschieden |
+| 2026-07-01 | Datenmodell | Prozentwerte werden zentral mit voller Präzision berechnet und in beiden Views einheitlich auf 2 Nachkommastellen angezeigt; Root-Parent bleibt `—`, `totalValue = 0` zeigt `0,00 %` | Eindeutige Anzeigevorgaben, keine Division durch 0, konsistente Sunburst-/Baumdarstellung | Entschieden |
 
 ## Hinweise zur Pflege
 

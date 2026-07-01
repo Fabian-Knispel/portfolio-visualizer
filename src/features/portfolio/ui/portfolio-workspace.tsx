@@ -11,6 +11,7 @@ import {
   computeFreenessStatus,
   computeIstNodeValues,
   computeIstPercentages,
+  formatPercentageValue,
   isRootNodePath,
 } from '../domain/portfolio-model';
 import { portfolioStore, type PortfolioStoreSnapshot } from '../state/portfolio-store';
@@ -151,14 +152,6 @@ function parseOptionalNumber(value: string): number | undefined {
 
 function formatNumber(value: number | undefined): string {
   return value === undefined ? '' : String(value);
-}
-
-function formatPercent(value: number | undefined, digits = 2): string {
-  if (value === undefined) {
-    return '—';
-  }
-
-  return `${(value * 100).toFixed(digits)} %`;
 }
 
 function formatRelativePath(path: NodePath): string {
@@ -516,11 +509,11 @@ export function PortfolioWorkspace() {
                     </div>
                     <div className="detail-card__row">
                       <span>Anteil gesamt</span>
-                      <strong>{formatPercent(selectedIstComputedNode.pctTotal)}</strong>
+                      <strong>{formatPercentageValue(selectedIstComputedNode.pctTotal)}</strong>
                     </div>
                     <div className="detail-card__row">
                       <span>Anteil Parent</span>
-                      <strong>{formatPercent(selectedIstComputedNode.pctOfParent)}</strong>
+                      <strong>{formatPercentageValue(selectedIstComputedNode.pctOfParent)}</strong>
                     </div>
                   </>
                 ) : null}
@@ -530,7 +523,7 @@ export function PortfolioWorkspace() {
                     <strong>
                       {compareResult === null
                         ? '—'
-                        : `${compareResult.status} · Δ ${compareResult.deltaPctPoints.toFixed(2)} pp · IST ${formatPercent(selectedIstPercent)}`}
+                        : `${compareResult.status} · Δ ${compareResult.deltaPctPoints.toFixed(2)} pp · IST ${formatPercentageValue(selectedIstPercent)}`}
                     </strong>
                   </div>
                 ) : null}

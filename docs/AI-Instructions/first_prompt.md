@@ -1,5 +1,5 @@
 Arbeitsgrundlage: Lies und befolge zuerst die AI‑Anweisungen im Projekt: docs/AI-Instructions/Copilot-Instruction.md und docs/AI-Instructions/Issue-Workflow.prompt.md.
-Issue‑Vorgehen: Für jedes Issue: 1) kurz zusammenfassen, 2) gezielte Rückfragen stellen, 3) Mini‑Plan (≤3 Schritte) erstellen, 4) auf Freigabe warten, 5) kleinste sichere Änderung umsetzen.
+Issue‑Vorgehen: Für jedes Issue: 1) kurz zusammenfassen, 2) gezielte Rückfragen stellen, 3) Mini‑Plan erstellen, 4) auf Freigabe warten, 5) sichere Änderung umsetzen.
 Code‑Style & Architektur: Feature‑nahe Platzierung der Domain‑Typen; halte dich an bestehende Patterns und die MVP-/Architektur‑Docs (docs/04_Architektur.md, docs/09_MVP-Definition.md).
 Datenmodell: Zentrale Implementierung unter src/features/portfolio/domain/portfolio-model.ts und normative Beschreibung in docs/06_Datenmodell.md. Entscheidungen dokumentieren in docs/07_Entscheidungsprotokoll.md.
 Änderungen: Mache nur kleine, sichere Änderungen; stage und committe inkrementell; Commit‑Nachrichten auf Deutsch und aussagekräftig (kurzer Satz).

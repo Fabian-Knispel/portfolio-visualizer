@@ -59,6 +59,10 @@ export interface IstComputedNode extends PortfolioNodeBase<IstComputedNode> {
 - `uncategorized` ist der technische IST-Knoten für nicht zuordenbare Werte.
 - `targetPct?` und `ownValue?` sind absichtlich optional, damit unvollständige Eingaben importierbar bleiben.
 - `pctTotal` und `pctOfParent` sind berechnete Felder, keine Eingabefelder.
+- Prozentwerte werden intern mit voller Präzision berechnet und in der UI mit 2 Nachkommastellen angezeigt.
+- Für den Root-Knoten wird `pctOfParent` als `—` dargestellt.
+- Bei `totalValue = 0` entsteht kein Division-durch-0-Fall; `pctTotal` bleibt `0` und die Anzeige ist `0,00 %`.
+- Sunburst und Baumansicht nutzen dieselbe zentrale Berechnungslogik für Prozentwerte.
 
 ## 3. Status- und Result-Typen
 
