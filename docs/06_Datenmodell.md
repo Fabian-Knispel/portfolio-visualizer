@@ -39,6 +39,7 @@ export interface PortfolioNodeBase<TChild> {
 
 export interface SollNode extends PortfolioNodeBase<SollNode> {
   targetPct?: number;
+  targetPctOfParent?: number;
 }
 
 export interface IstNode extends PortfolioNodeBase<IstNode> {
@@ -58,9 +59,12 @@ export interface IstComputedNode extends PortfolioNodeBase<IstComputedNode> {
 - `root` ist der feste technische Root-Pfad.
 - `uncategorized` ist der technische IST-Knoten für nicht zuordenbare Werte.
 - `targetPct?` und `ownValue?` sind absichtlich optional, damit unvollständige Eingaben importierbar bleiben.
+- `targetPctOfParent?` ist das primäre SOLL-Eingabefeld für Nicht-Root-Knoten.
+- `targetPct?` bleibt als rückwärtskompatibles, absolutes Fallback erhalten.
 - `pctTotal` und `pctOfParent` sind berechnete Felder, keine Eingabefelder.
 - Prozentwerte werden intern mit voller Präzision berechnet und in der UI mit 2 Nachkommastellen angezeigt.
 - Für den Root-Knoten wird `pctOfParent` als `—` dargestellt.
+- Für den SOLL-Root gilt fachlich immer 100% Gesamtanteil; `targetPctOfParent` wird dort nicht als Eingabe genutzt.
 - Bei `totalValue = 0` entsteht kein Division-durch-0-Fall; `pctTotal` bleibt `0` und die Anzeige ist `0,00 %`.
 - Sunburst und Baumansicht nutzen dieselbe zentrale Berechnungslogik für Prozentwerte.
 - Die Sunburst-Ansicht kann SOLL und IST über denselben Umschaltpfad darstellen; die Transformationsschicht bleibt getrennt vom Rendering.
@@ -98,6 +102,7 @@ export function isRootNodePath(path: NodePath): boolean;
 
 export function computeIstNodeValues(root: IstNode): IstComputedNode;
 export function computeIstPercentages(root: IstComputedNode): IstComputedNode;
+export function computeSollPercentages(root: SollNode): SollComputedNode;
 
 export function computeFreenessStatus(node: SollNode): FreenessResult | null;
 
@@ -113,6 +118,12 @@ export function moveNodeInTree<TNode extends PortfolioNodeBase<TNode>>(
   newParentPath: NodePath
 ): TNode;
 ```
+
+### 4.1 SOLL-Ableitungsregel (Parent -> Absolut)
+
+- Für Nicht-Root-Knoten gilt: `absoluteTarget = parentAbsoluteTarget * targetPctOfParent / 100`.
+- Root hat immer `absoluteTarget = 100`.
+- Falls `targetPctOfParent` fehlt, wird `targetPct` (falls vorhanden) als Legacy-Fallback verwendet.
 
 ## 5. Beispieldaten
 

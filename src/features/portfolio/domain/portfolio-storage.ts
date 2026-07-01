@@ -1,5 +1,8 @@
 import { IstNode, SollNode } from './portfolio-model';
 
+const ROOT_NODE_PATH = 'root';
+const HUNDRED = 100;
+
 export interface PortfolioStorageState {
   sollRoot: SollNode | null;
   istRoot: IstNode | null;
@@ -73,6 +76,10 @@ function isSollNode(value: unknown): value is SollNode {
     return false;
   }
 
+  if ('targetPctOfParent' in value && value.targetPctOfParent !== undefined && !isNumber(value.targetPctOfParent)) {
+    return false;
+  }
+
   return value.children.every((child) => isSollNode(child));
 }
 
@@ -113,6 +120,74 @@ function parseStorageError(error: unknown, fallbackMessage: string): string {
   return fallbackMessage;
 }
 
+function toFiniteNumber(value: number | undefined): number | undefined {
+  return Number.isFinite(value ?? Number.NaN) ? value : undefined;
+}
+
+interface SollMigrationResult {
+  node: SollNode;
+  absoluteTargetPct: number;
+  migrated: boolean;
+}
+
+function migrateSollNode(node: SollNode, parentAbsoluteTargetPct?: number): SollMigrationResult {
+  const isRoot = node.path === ROOT_NODE_PATH;
+  const parentAbsolute = toFiniteNumber(parentAbsoluteTargetPct);
+  const absoluteTargetPctFromLegacy = toFiniteNumber(node.targetPct);
+  const targetPctOfParent = toFiniteNumber(node.targetPctOfParent);
+
+  let absoluteTargetPct = isRoot ? HUNDRED : absoluteTargetPctFromLegacy ?? 0;
+  let nextTargetPctOfParent = targetPctOfParent;
+  let migrated = false;
+
+  if (!isRoot && targetPctOfParent !== undefined && parentAbsolute !== undefined) {
+    absoluteTargetPct = parentAbsolute * (targetPctOfParent / HUNDRED);
+  }
+
+  if (!isRoot && nextTargetPctOfParent === undefined && absoluteTargetPctFromLegacy !== undefined && parentAbsolute !== undefined && parentAbsolute !== 0) {
+    nextTargetPctOfParent = (absoluteTargetPctFromLegacy / parentAbsolute) * HUNDRED;
+    absoluteTargetPct = absoluteTargetPctFromLegacy;
+    migrated = true;
+  }
+
+  const migratedChildren = node.children.map((child) => migrateSollNode(child, absoluteTargetPct));
+  const childrenMigrated = migratedChildren.some((result) => result.migrated);
+
+  const nextNode: SollNode = migrated || childrenMigrated
+    ? {
+      ...node,
+      targetPctOfParent: nextTargetPctOfParent,
+      children: migratedChildren.map((result) => result.node),
+    }
+    : node;
+
+  return {
+    node: nextNode,
+    absoluteTargetPct,
+    migrated: migrated || childrenMigrated,
+  };
+}
+
+function migrateStorageState(state: PortfolioStorageState): { state: PortfolioStorageState; migrated: boolean } {
+  if (state.sollRoot === null) {
+    return { state, migrated: false };
+  }
+
+  const migratedSoll = migrateSollNode(state.sollRoot);
+
+  if (!migratedSoll.migrated) {
+    return { state, migrated: false };
+  }
+
+  return {
+    state: {
+      ...state,
+      sollRoot: migratedSoll.node,
+    },
+    migrated: true,
+  };
+}
+
 export function loadPortfolioStorageState(storage: StorageLike | null = getDefaultStorage()): PortfolioStorageLoadResult {
   const emptyState = createEmptyPortfolioStorageState();
 
@@ -136,9 +211,22 @@ export function loadPortfolioStorageState(storage: StorageLike | null = getDefau
       };
     }
 
+    const migratedStateResult = migrateStorageState(parsedValue.state);
+
+    if (!migratedStateResult.migrated) {
+      return {
+        state: parsedValue.state,
+        error: null,
+      };
+    }
+
+    const saveResult = savePortfolioStorageState(migratedStateResult.state, storage);
+
     return {
-      state: parsedValue.state,
-      error: null,
+      state: migratedStateResult.state,
+      error: saveResult.success
+        ? null
+        : `SOLL-Migration konnte nicht gespeichert werden: ${saveResult.error ?? 'Unbekannter Fehler.'}`,
     };
   } catch (error) {
     return {

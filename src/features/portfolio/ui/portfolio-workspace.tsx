@@ -15,6 +15,7 @@ import {
   computeFreenessStatus,
   computeIstNodeValues,
   computeIstPercentages,
+  computeSollPercentages,
   formatPercentageValue,
   isRootNodePath,
 } from '../domain/portfolio-model';
@@ -317,6 +318,10 @@ export function PortfolioWorkspace({
     () => (snapshot.istRoot === null ? null : computeIstPercentages(computeIstNodeValues(snapshot.istRoot))),
     [snapshot.istRoot]
   );
+  const sollComputedRoot = useMemo(
+    () => (snapshot.sollRoot === null ? null : computeSollPercentages(snapshot.sollRoot)),
+    [snapshot.sollRoot]
+  );
 
   const sunburstRoot = useMemo(
     () => buildSunburstDatumForMode(sunburstMode, snapshot.sollRoot, istComputedRoot),
@@ -371,7 +376,7 @@ export function PortfolioWorkspace({
       label: selectedNode.label,
       numericValue:
         activeViewMode === 'soll'
-          ? formatNumber((selectedNode as SollNode).targetPct)
+          ? formatNumber((findNodeByPath(sollComputedRoot, selectedNode.path)?.targetPctOfParent))
           : activeViewMode === 'ist'
             ? formatNumber((selectedNode as IstNode).ownValue)
             : '',
@@ -379,7 +384,7 @@ export function PortfolioWorkspace({
       childLabel: '',
       childNumericValue: '',
     });
-  }, [activeViewMode, parentPath, selectedNode]);
+  }, [activeViewMode, parentPath, selectedNode, sollComputedRoot]);
 
   useEffect(() => {
     setDraft((previous) => ({
@@ -394,17 +399,21 @@ export function PortfolioWorkspace({
     return () => clearTimeout(timer);
   }, [savedAt]);
 
-  const selectedCompareNode = selectedNode === null ? null : findNodeByPath(snapshot.sollRoot, selectedNode.path);
+  const selectedCompareNode = selectedNode === null ? null : findNodeByPath(sollComputedRoot, selectedNode.path);
   const selectedIstComputedNode =
-    activeViewMode !== 'ist' || istComputedRoot === null || selectedNode === null
+    istComputedRoot === null || selectedNode === null
       ? null
       : findNodeByPath(istComputedRoot, selectedNode.path);
-  const selectedIstPercent = selectedIstComputedNode?.pctTotal;
+  const selectedIstPercent = selectedIstComputedNode?.pctTotal ?? 0;
+  const selectedSollComputedNode = selectedNode === null ? null : findNodeByPath(sollComputedRoot, selectedNode.path);
+  const selectedSollFreeness = activeViewMode === 'soll' && selectedNode !== null
+    ? computeFreenessStatus(selectedNode as SollNode)
+    : null;
 
   const compareResult =
-    activeViewMode !== 'vergleich' || selectedCompareNode === null || selectedIstPercent === undefined
+    activeViewMode !== 'vergleich' || selectedCompareNode === null
       ? null
-      : computeCompareStatus(selectedCompareNode.path, (selectedCompareNode as SollNode).targetPct ?? 0, selectedIstPercent);
+      : computeCompareStatus(selectedCompareNode.path, selectedCompareNode.pctTotal, selectedIstPercent);
 
   function updateSelectedPath(path: NodePath): void {
     setSelectedPaths((previous) => ({
@@ -435,21 +444,23 @@ export function PortfolioWorkspace({
     if (activeViewMode === 'soll') {
       const sollNode = node as SollNode;
 
+      const computedSollNode = sollComputedRoot === null ? null : findNodeByPath(sollComputedRoot, node.path);
+
       if (sollNode.children.length > 0) {
         const freeness = computeFreenessStatus(sollNode);
 
         return {
           status: freeness?.status,
           primaryValue: formatStoredPercent(freeness?.childrenTargetSumPct),
-          secondaryValue: formatStoredPercent(sollNode.targetPct),
+          secondaryValue: formatStoredPercent(100),
           direction: freeness?.status === 'overallocated' ? 'up' : freeness?.status === 'free' ? 'down' : 'flat',
           showBadge: freeness?.status === 'correct',
         };
       }
 
       return {
-        primaryValue: formatStoredPercent(sollNode.targetPct),
-        secondaryValue: formatStoredPercent(sollNode.targetPct),
+        primaryValue: formatStoredPercent(computedSollNode?.targetPctOfParent),
+        secondaryValue: formatRatioPercent(computedSollNode?.pctTotal),
         direction: 'flat',
         showBadge: false,
       };
@@ -467,13 +478,14 @@ export function PortfolioWorkspace({
     }
 
     const sollNode = node as SollNode;
+    const computedSollNode = sollComputedRoot === null ? null : findNodeByPath(sollComputedRoot, node.path);
     const istNode = istComputedRoot === null ? null : findNodeByPath(istComputedRoot, node.path);
-    const compare = computeCompareStatus(sollNode.path, sollNode.targetPct ?? 0, istNode?.pctTotal ?? 0);
+    const compare = computeCompareStatus(sollNode.path, computedSollNode?.pctTotal ?? 0, istNode?.pctTotal ?? 0);
 
     return {
       status: compare.status,
       primaryValue: formatRatioPercent(istNode?.pctTotal),
-      secondaryValue: formatStoredPercent(sollNode.targetPct),
+      secondaryValue: formatRatioPercent(computedSollNode?.pctTotal),
       direction:
         compare.status === 'overweighted'
           ? 'up'
@@ -559,10 +571,13 @@ export function PortfolioWorkspace({
     }
 
     if (activeViewMode === 'soll') {
+      const isRoot = isRootNodePath(selectedNode.path);
+
       nextSnapshot = portfolioStore.updateSollNode(selectedNode.path, (node) => ({
         ...node,
         label: nextLabel,
-        targetPct: editValueValidation.parsedValue,
+        targetPctOfParent: isRoot ? 100 : editValueValidation.parsedValue,
+        targetPct: isRoot ? node.targetPct : undefined,
       }));
     } else {
       nextSnapshot = portfolioStore.updateIstNode(selectedNode.path, (node) => ({
@@ -600,7 +615,7 @@ export function PortfolioWorkspace({
       nextSnapshot = portfolioStore.appendSollNode(selectedNode.path, {
         path: childPath,
         label: childLabel,
-        targetPct: childValueValidation.parsedValue,
+        targetPctOfParent: childValueValidation.parsedValue,
         children: [],
       });
     } else {
@@ -644,16 +659,17 @@ export function PortfolioWorkspace({
   const readOnlyMode = activeViewMode === 'vergleich';
   const isIstMode = activeViewMode === 'ist';
   const isSollMode = activeViewMode === 'soll';
+  const isRootSollSelection = isSollMode && selectedNode !== null && isRootNodePath(selectedNode.path);
   const editValueValidation =
     isSollMode || isIstMode
-      ? validateNumericInput(draft.numericValue, isSollMode ? 'soll' : 'ist', isSollMode ? 'SOLL-Ziel' : 'IST-Wert')
+      ? validateNumericInput(draft.numericValue, isSollMode ? 'soll' : 'ist', isSollMode ? 'Anteil am Parent' : 'IST-Wert')
       : { parsedValue: undefined, error: null };
   const childValueValidation =
     isSollMode || isIstMode
       ? validateNumericInput(
         draft.childNumericValue,
         isSollMode ? 'soll' : 'ist',
-        isSollMode ? 'Neues SOLL-Ziel' : 'Neuer IST-Wert'
+        isSollMode ? 'Neuer Anteil am Parent' : 'Neuer IST-Wert'
       )
       : { parsedValue: undefined, error: null };
   const saveSucceeded = savedAt !== null && snapshot.saveError === null;
@@ -767,6 +783,24 @@ export function PortfolioWorkspace({
                     <strong>{selectedNode.children.length > 0 ? computeFreenessStatus(selectedNode as SollNode)?.status ?? 'correct' : '—'}</strong>
                   </div>
                 ) : null}
+                {isSollMode ? (
+                  <>
+                    <div className="detail-card__row">
+                      <span>Anteil am Parent</span>
+                      <strong>{isRootNodePath(selectedNode.path) ? '100 % (Root)' : formatStoredPercent(selectedSollComputedNode?.targetPctOfParent)}</strong>
+                    </div>
+                    <div className="detail-card__row">
+                      <span>Anteil gesamt</span>
+                      <strong>{formatPercentageValue(selectedSollComputedNode?.pctTotal)}</strong>
+                    </div>
+                    {selectedNode.children.length > 0 ? (
+                      <div className="detail-card__row">
+                        <span>Summe Kinder (% vom Parent)</span>
+                        <strong>{formatStoredPercent(selectedSollFreeness?.childrenTargetSumPct)}</strong>
+                      </div>
+                    ) : null}
+                  </>
+                ) : null}
                 {isIstMode && selectedIstComputedNode !== null ? (
                   <>
                     <div className="detail-card__row">
@@ -791,7 +825,7 @@ export function PortfolioWorkspace({
                     </div>
                     <div className="detail-card__row">
                       <span>IST-Anteil</span>
-                      <strong>{formatPercentageValue(selectedIstPercent)}</strong>
+                      <strong>{formatPercentageValue(selectedIstComputedNode?.pctTotal)}</strong>
                     </div>
                     <div className="detail-card__row">
                       <span>Abweichung</span>
@@ -802,6 +836,11 @@ export function PortfolioWorkspace({
                       </strong>
                     </div>
                   </>
+                ) : null}
+                {isSollMode && selectedSollFreeness !== null && selectedSollFreeness.status !== 'correct' ? (
+                  <p className="field__error" role="alert">
+                    Die Kinder von diesem Parent summieren sich auf {formatStoredPercent(selectedSollFreeness.childrenTargetSumPct)} statt 100 %.
+                  </p>
                 ) : null}
               </div>
 
@@ -829,17 +868,17 @@ export function PortfolioWorkspace({
                 </label>
 
                 <label className="field">
-                  <span>{isSollMode ? 'SOLL-Ziel in %' : isIstMode ? 'IST-Wert' : 'Wert'}</span>
+                  <span>{isSollMode ? 'Anteil am Parent in %' : isIstMode ? 'IST-Wert' : 'Wert'}</span>
                   <input
                     className={editValueValidation.error !== null ? 'field__input--error' : undefined}
-                    disabled={readOnlyMode}
+                    disabled={readOnlyMode || isRootSollSelection}
                     inputMode="decimal"
                     value={draft.numericValue}
                     aria-invalid={editValueValidation.error !== null}
                     aria-describedby={editValueValidation.error !== null ? 'edit-numeric-error' : undefined}
                     onChange={(event) => setDraft((previous) => ({ ...previous, numericValue: event.target.value }))}
                     onKeyDown={(event) => { if (event.key === 'Enter') handleSave(); }}
-                    placeholder={isSollMode ? 'z. B. 25' : 'z. B. 1000'}
+                    placeholder={isSollMode ? (isRootSollSelection ? 'Root = 100 % (fix)' : 'z. B. 25') : 'z. B. 1000'}
                   />
                 </label>
                 {editValueValidation.error !== null ? <p className="field__error" id="edit-numeric-error" role="alert">{editValueValidation.error}</p> : null}
@@ -904,7 +943,7 @@ export function PortfolioWorkspace({
                 </label>
 
                 <label className="field">
-                  <span>{isSollMode ? 'Neues SOLL-Ziel in %' : isIstMode ? 'Neuer IST-Wert' : 'Wert'}</span>
+                  <span>{isSollMode ? 'Neuer Anteil am Parent in %' : isIstMode ? 'Neuer IST-Wert' : 'Wert'}</span>
                   <input
                     className={childValueValidation.error !== null ? 'field__input--error' : undefined}
                     disabled={readOnlyMode}
@@ -914,7 +953,7 @@ export function PortfolioWorkspace({
                     aria-describedby={childValueValidation.error !== null ? 'child-numeric-error' : undefined}
                     onChange={(event) => setDraft((previous) => ({ ...previous, childNumericValue: event.target.value }))}
                     onKeyDown={(event) => { if (event.key === 'Enter') handleAddChild(); }}
-                    placeholder={isSollMode ? 'z. B. 15' : 'z. B. 250'}
+                    placeholder={isSollMode ? 'z. B. 40' : 'z. B. 250'}
                   />
                 </label>
                 {childValueValidation.error !== null ? <p className="field__error" id="child-numeric-error" role="alert">{childValueValidation.error}</p> : null}

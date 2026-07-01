@@ -72,16 +72,17 @@ function createSollTree(): SollNode {
   return {
     path: ROOT_NODE_PATH,
     label: 'Portfolio',
+    targetPctOfParent: 100,
     children: [
       {
         path: buildNodePath('Equity'),
         label: 'Equity',
-        targetPct: 60,
+        targetPctOfParent: 60,
         children: [
           {
             path: buildNodePath('Equity', 'USA'),
             label: 'USA',
-            targetPct: 30,
+            targetPctOfParent: 50,
             children: [],
           },
         ],
@@ -89,7 +90,7 @@ function createSollTree(): SollNode {
       {
         path: buildNodePath('Cash'),
         label: 'Cash',
-        targetPct: 40,
+        targetPctOfParent: 40,
         children: [],
       },
     ],
@@ -234,11 +235,11 @@ describe('tree operations', () => {
     const root = createSollTree();
     const updated = updateNodeInTree(root, buildNodePath('Cash'), (node) => ({
       ...node,
-      targetPct: 35,
+      targetPctOfParent: 35,
     }));
 
-    expect(findNodeByPath(updated, buildNodePath('Cash'))?.targetPct).toBe(35);
-    expect(findNodeByPath(root, buildNodePath('Cash'))?.targetPct).toBe(40);
+    expect(findNodeByPath(updated, buildNodePath('Cash'))?.targetPctOfParent).toBe(35);
+    expect(findNodeByPath(root, buildNodePath('Cash'))?.targetPctOfParent).toBe(40);
 
     const unchanged = updateNodeInTree(root, buildNodePath('Missing'), (node) => ({
       ...node,
@@ -264,7 +265,7 @@ describe('tree operations', () => {
     const appended = appendNodeToTree(root, buildNodePath('Equity'), {
       path: buildNodePath('Equity', 'EM'),
       label: 'EM',
-      targetPct: 10,
+      targetPctOfParent: 10,
       children: [],
     });
     expect(findNodeByPath(appended, buildNodePath('Equity', 'EM'))?.label).toBe('EM');
@@ -272,7 +273,7 @@ describe('tree operations', () => {
     const missingParent = appendNodeToTree(root, buildNodePath('Missing'), {
       path: buildNodePath('Missing', 'Child'),
       label: 'Child',
-      targetPct: 1,
+      targetPctOfParent: 1,
       children: [],
     });
     expect(missingParent).toBe(root);
@@ -280,7 +281,7 @@ describe('tree operations', () => {
     const duplicatePath = appendNodeToTree(root, ROOT_NODE_PATH, {
       path: buildNodePath('Cash'),
       label: 'Duplicate Cash',
-      targetPct: 5,
+      targetPctOfParent: 5,
       children: [],
     });
     expect(duplicatePath).toBe(root);
@@ -288,12 +289,12 @@ describe('tree operations', () => {
     const cycleLikeChild: SollNode = {
       path: buildNodePath('Temp'),
       label: 'Temp',
-      targetPct: 5,
+      targetPctOfParent: 5,
       children: [
         {
           path: buildNodePath('Equity', 'USA'),
           label: 'Cycle Reference',
-          targetPct: 5,
+          targetPctOfParent: 5,
           children: [],
         },
       ],
@@ -324,10 +325,34 @@ describe('SOLL percentages and status derivations', () => {
 
     expect(computed.pctTotal).toBe(1);
     expect(computed.pctOfParent).toBeUndefined();
+    expect(computed.targetPctOfParent).toBeUndefined();
     expect(equity.pctTotal).toBeCloseTo(0.6, 10);
     expect(equity.pctOfParent).toBeCloseTo(0.6, 10);
+    expect(equity.targetPct).toBeCloseTo(60, 10);
     expect(usa.pctTotal).toBeCloseTo(0.3, 10);
     expect(usa.pctOfParent).toBeCloseTo(0.5, 10);
+    expect(usa.targetPct).toBeCloseTo(30, 10);
+  });
+
+  it('supports legacy absolute targetPct values as backward-compatible fallback', () => {
+    const computed = computeSollPercentages({
+      path: ROOT_NODE_PATH,
+      label: 'Portfolio',
+      children: [
+        {
+          path: buildNodePath('Legacy'),
+          label: 'Legacy',
+          targetPct: 25,
+          children: [],
+        },
+      ],
+    });
+
+    const legacy = computed.children[0];
+
+    expect(legacy.pctTotal).toBeCloseTo(0.25, 10);
+    expect(legacy.pctOfParent).toBeCloseTo(0.25, 10);
+    expect(legacy.targetPctOfParent).toBeCloseTo(25, 10);
   });
 
   it('derives compare statuses including epsilon-stable equality and missing cases', () => {

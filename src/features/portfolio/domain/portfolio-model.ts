@@ -12,6 +12,7 @@ export interface PortfolioNodeBase<TChild> {
 
 export interface SollNode extends PortfolioNodeBase<SollNode> {
   targetPct?: number;
+  targetPctOfParent?: number;
 }
 
 export interface IstNode extends PortfolioNodeBase<IstNode> {
@@ -27,6 +28,7 @@ export interface IstComputedNode extends PortfolioNodeBase<IstComputedNode> {
 
 export interface SollComputedNode extends PortfolioNodeBase<SollComputedNode> {
   targetPct?: number;
+  targetPctOfParent?: number;
   pctTotal: number;
   pctOfParent?: number;
 }
@@ -84,6 +86,38 @@ function areNumbersEqual(left: number, right: number): boolean {
 
 function toRatioPercentage(value: number | undefined): number {
   return normalizeNumber(value) / HUNDRED;
+}
+
+function hasFiniteNumber(value: number | undefined): value is number {
+  return Number.isFinite(value ?? Number.NaN);
+}
+
+function computeAbsoluteTargetPct(node: SollNode, parentAbsoluteTargetPct?: number): number {
+  if (isRootNodePath(node.path)) {
+    return HUNDRED;
+  }
+
+  if (hasFiniteNumber(node.targetPctOfParent) && hasFiniteNumber(parentAbsoluteTargetPct)) {
+    return parentAbsoluteTargetPct * (node.targetPctOfParent / HUNDRED);
+  }
+
+  return normalizeNumber(node.targetPct);
+}
+
+function computeTargetPctOfParent(node: SollNode, parentAbsoluteTargetPct?: number): number | undefined {
+  if (isRootNodePath(node.path) || !hasFiniteNumber(parentAbsoluteTargetPct) || parentAbsoluteTargetPct === ZERO) {
+    return undefined;
+  }
+
+  if (hasFiniteNumber(node.targetPctOfParent)) {
+    return node.targetPctOfParent;
+  }
+
+  if (!hasFiniteNumber(node.targetPct)) {
+    return undefined;
+  }
+
+  return (node.targetPct / parentAbsoluteTargetPct) * HUNDRED;
 }
 
 export interface ComputedPercentageValues {
@@ -380,20 +414,19 @@ export function computeIstPercentages(root: IstComputedNode): IstComputedNode {
 }
 
 export function computeSollPercentages(root: SollNode): SollComputedNode {
-  function annotate(node: SollNode, parentPctTotal?: number): SollComputedNode {
-    const pctTotal = isRootNodePath(node.path)
-      ? 1
-      : toRatioPercentage(node.targetPct);
-
-    const pctOfParent = parentPctTotal === undefined || parentPctTotal === ZERO
-      ? undefined
-      : computePercentageValue(pctTotal, parentPctTotal);
+  function annotate(node: SollNode, parentAbsoluteTargetPct?: number): SollComputedNode {
+    const absoluteTargetPct = computeAbsoluteTargetPct(node, parentAbsoluteTargetPct);
+    const pctTotal = toRatioPercentage(absoluteTargetPct);
+    const targetPctOfParent = computeTargetPctOfParent(node, parentAbsoluteTargetPct);
+    const pctOfParent = targetPctOfParent === undefined ? undefined : toRatioPercentage(targetPctOfParent);
 
     return {
       ...node,
+      targetPct: absoluteTargetPct,
+      targetPctOfParent,
       pctTotal,
       pctOfParent,
-      children: node.children.map((child) => annotate(child, pctTotal)),
+      children: node.children.map((child) => annotate(child, absoluteTargetPct)),
     };
   }
 
@@ -405,8 +438,13 @@ export function computeFreenessStatus(node: SollNode): FreenessResult | null {
     return null;
   }
 
-  const parentTargetPct = normalizeNumber(node.targetPct);
-  const childrenTargetSumPct = node.children.reduce((sum, child) => sum + normalizeNumber(child.targetPct), ZERO);
+  const parentTargetPct = HUNDRED;
+  const parentAbsoluteTargetPct = isRootNodePath(node.path) ? HUNDRED : normalizeNumber(node.targetPct);
+  const childrenTargetSumPct = node.children.reduce((sum, child) => {
+    const childPctOfParent = computeTargetPctOfParent(child, parentAbsoluteTargetPct);
+
+    return sum + normalizeNumber(childPctOfParent);
+  }, ZERO);
 
   let status: FreenessStatus = 'correct';
 
@@ -463,10 +501,11 @@ function flattenTree<TNode extends PortfolioNodeBase<TNode>>(root: TNode): FlatT
 }
 
 export function buildCompareRows(sollRoot: SollNode | null, istRoot: IstComputedNode | null): CompareRow[] {
-  const sollEntries = sollRoot === null ? [] : flattenTree(sollRoot);
+  const computedSollRoot = sollRoot === null ? null : computeSollPercentages(sollRoot);
+  const sollEntries = computedSollRoot === null ? [] : flattenTree(computedSollRoot);
   const istEntries = istRoot === null ? [] : flattenTree(istRoot);
 
-  const sollMap = new Map<NodePath, FlatTreeEntry<SollNode>>();
+  const sollMap = new Map<NodePath, FlatTreeEntry<SollComputedNode>>();
   const istMap = new Map<NodePath, FlatTreeEntry<IstComputedNode>>();
 
   sollEntries.forEach((entry) => {
@@ -504,11 +543,7 @@ export function buildCompareRows(sollRoot: SollNode | null, istRoot: IstComputed
       };
     }
 
-    const sollTargetPct = sollEntry === undefined
-      ? ZERO
-      : isRootNodePath(path)
-        ? 1
-        : toRatioPercentage(sollEntry.node.targetPct);
+    const sollTargetPct = sollEntry?.node.pctTotal ?? ZERO;
     const istPct = istEntry?.node.pctTotal ?? ZERO;
     const compare = computeCompareStatus(path, sollTargetPct, istPct);
 
@@ -523,27 +558,32 @@ export function buildCompareRows(sollRoot: SollNode | null, istRoot: IstComputed
 export const exampleSollHierarchy: SollNode = {
   path: ROOT_NODE_PATH,
   label: 'Portfolio',
+  targetPctOfParent: HUNDRED,
   children: [
     {
       path: buildNodePath('Equity'),
       label: 'Equity',
       targetPct: 60,
+      targetPctOfParent: 60,
       children: [
         {
           path: buildNodePath('Equity', 'USA'),
           label: 'USA',
           targetPct: 35,
+          targetPctOfParent: 58.3333333333,
           children: [
             {
               path: buildNodePath('Equity', 'USA', 'Large Cap'),
               label: 'Large Cap',
               targetPct: 20,
+              targetPctOfParent: 57.1428571429,
               children: [],
             },
             {
               path: buildNodePath('Equity', 'USA', 'Small Cap'),
               label: 'Small Cap',
               targetPct: 15,
+              targetPctOfParent: 42.8571428571,
               children: [],
             },
           ],
@@ -552,11 +592,13 @@ export const exampleSollHierarchy: SollNode = {
           path: buildNodePath('Equity', 'Europe'),
           label: 'Europe',
           targetPct: 25,
+          targetPctOfParent: 41.6666666667,
           children: [
             {
               path: buildNodePath('Equity', 'Europe', 'Core'),
               label: 'Core',
               targetPct: 25,
+              targetPctOfParent: 100,
               children: [],
             },
           ],
@@ -567,16 +609,19 @@ export const exampleSollHierarchy: SollNode = {
       path: buildNodePath('Bonds'),
       label: 'Bonds',
       targetPct: 40,
+      targetPctOfParent: 40,
       children: [
         {
           path: buildNodePath('Bonds', 'Government'),
           label: 'Government',
           targetPct: 25,
+          targetPctOfParent: 62.5,
           children: [
             {
               path: buildNodePath('Bonds', 'Government', 'Short Duration'),
               label: 'Short Duration',
               targetPct: 25,
+              targetPctOfParent: 100,
               children: [],
             },
           ],
@@ -585,11 +630,13 @@ export const exampleSollHierarchy: SollNode = {
           path: buildNodePath('Bonds', 'Corporate'),
           label: 'Corporate',
           targetPct: 15,
+          targetPctOfParent: 37.5,
           children: [
             {
               path: buildNodePath('Bonds', 'Corporate', 'Investment Grade'),
               label: 'Investment Grade',
               targetPct: 15,
+              targetPctOfParent: 100,
               children: [],
             },
           ],

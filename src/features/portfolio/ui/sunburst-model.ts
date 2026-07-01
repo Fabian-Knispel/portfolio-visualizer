@@ -1,7 +1,8 @@
 import { hierarchy, partition } from 'd3';
 import type { HierarchyRectangularNode } from 'd3';
 
-import type { IstComputedNode, SollNode } from '../domain/portfolio-model';
+import { computeSollPercentages } from '../domain/portfolio-model';
+import type { IstComputedNode, SollComputedNode, SollNode } from '../domain/portfolio-model';
 
 export type SunburstMode = 'soll' | 'ist';
 
@@ -47,18 +48,20 @@ export function buildSollSunburstDatum(root: SollNode | null): SunburstNodeDatum
     return null;
   }
 
-  function transformNode(node: SollNode): SunburstNodeDatum {
+  const computedRoot = computeSollPercentages(root);
+
+  function transformNode(node: SollComputedNode): SunburstNodeDatum {
     const children = node.children.map(transformNode);
 
     return {
       path: node.path,
       label: node.label,
-      size: children.length === 0 ? normalizeSize(node.targetPct) : 0,
+      size: children.length === 0 ? normalizeSize(node.pctTotal * 100) : 0,
       children,
     };
   }
 
-  return transformNode(root);
+  return transformNode(computedRoot);
 }
 
 export function buildIstSunburstDatum(root: IstComputedNode | null): SunburstNodeDatum | null {

@@ -28,17 +28,18 @@ function createSollRoot(): SollNode {
   return {
     path: ROOT_NODE_PATH,
     label: 'Portfolio',
+    targetPctOfParent: 100,
     children: [
       {
         path: buildNodePath('Equity'),
         label: 'Equity',
-        targetPct: 60,
+        targetPctOfParent: 60,
         children: [],
       },
       {
         path: buildNodePath('Cash'),
         label: 'Cash',
-        targetPct: 40,
+        targetPctOfParent: 40,
         children: [],
       },
     ],
@@ -76,7 +77,7 @@ describe('portfolio store smoke flow', () => {
 
     store.updateSollNode(buildNodePath('Equity'), (node) => ({
       ...node,
-      targetPct: 55,
+      targetPctOfParent: 55,
     }));
     store.updateIstNode(buildNodePath('Cash'), (node) => ({
       ...node,
@@ -86,7 +87,7 @@ describe('portfolio store smoke flow', () => {
     store.appendSollNode(ROOT_NODE_PATH, {
       path: buildNodePath('Bonds'),
       label: 'Bonds',
-      targetPct: 5,
+      targetPctOfParent: 5,
       children: [],
     });
     store.appendIstNode(ROOT_NODE_PATH, {
