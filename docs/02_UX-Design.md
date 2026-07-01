@@ -47,3 +47,17 @@ Dieser Abschnitt dokumentiert den Entscheidungsweg (vormals OFFEN/TBD), ist aber
 ✅ Entschieden am 2026-06-21  
 ✅ Konkretisiert in `docs/03_Bewertungsdarstellung.md`  
 ➡️ Für Implementierung gilt ausschließlich `docs/03_Bewertungsdarstellung.md`.
+
+---
+
+## ✅ ENTSCHIEDEN: Tree-Panel Overflow-Verhalten
+
+### Gewählte Variante
+- Tree-Zeilen bleiben strikt einzeilig, auch unter 900px.
+- Nur das Node-Label wird per Ellipsis gekürzt und zeigt den Volltext bei Hover.
+- Metadaten werden nicht textuell gekürzt; bei engem Viewport wird erst Direction/Badge reduziert und danach der Referenzwert ausgeblendet.
+
+### Begründung
+- Verhindert horizontales Ausbrechen der Tree-Zeilen aus Panel und Seite.
+- Hält den Informationskern stabil und priorisiert lesbare Metadaten ohne Text-Clipping.
+- Entschärft Überlappungen in kleinen Viewports durch klare Priorisierung bei Platzmangel.

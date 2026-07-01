@@ -26,6 +26,7 @@ Bei Konflikten zwischen Dokumenten gilt: **Eintragungsdatum im Protokoll + norma
 | 2026-07-01 | Visualisierung | Sunburst zunächst nur für SOLL umgesetzt, aber über eine separate Transformationsschicht vorbereitet, damit IST später ohne Chart-Umbau ergänzt werden kann | Kleine, sichere Erweiterung mit klarer Trennung von Domain und Rendering | Entschieden |
 | 2026-07-01 | Visualisierung | SOLL/IST-Sunburst wird per Workspace-Schalter umgeschaltet; Hover-Zustand wird beim Wechsel zurückgesetzt | Kein Mischzustand, klare Zustandsgrenze, Konsistenz der Anzeige | Entschieden |
 | 2026-07-01 | UI-State | View-Toggle und Sunburst-Modus liegen im App-Root-State; fachliche Portfolio-Daten bleiben davon getrennt | Verhindert unerwartete Resets beim Umschalten und hält Darstellungs- sowie Fachzustand unabhängig | Entschieden |
+| 2026-07-01 | UX | Tree-Panel bleibt horizontal overflow-frei: einzeilige Rows, Label-Ellipsis mit Hover-Volltext, responsive Priorität Badge/Direction reduzieren vor Referenz-Ausblendung | Stabilität bei langen Labels, tiefen Ebenen und kleinen Viewports ohne überlappende Controls | Entschieden |
 
 ## Hinweise zur Pflege
 

@@ -495,7 +495,7 @@ export function PortfolioWorkspace({
         <div
           className={`tree-node ${isSelected ? 'tree-node--selected' : ''}`}
           data-status={presentation.status}
-          style={{ marginInlineStart: depth * 14 }}
+          style={{ marginInlineStart: Math.min(depth * 14, 56) }}
         >
           <button
             aria-label={isCollapsed ? 'Knoten aufklappen' : 'Knoten einklappen'}
@@ -508,7 +508,9 @@ export function PortfolioWorkspace({
           </button>
 
           <button className="tree-node__select" onClick={() => updateSelectedPath(node.path)} type="button">
-            <span className="tree-node__label">{node.label}</span>
+            <span className="tree-node__label" title={node.label}>
+              {node.label}
+            </span>
           </button>
 
           <div className="tree-node__meta">
