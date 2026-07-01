@@ -27,7 +27,7 @@ export interface IstComputedNode extends PortfolioNodeBase<IstComputedNode> {
 
 export type FreenessStatus = 'correct' | 'free' | 'overallocated';
 
-export type CompareStatus = 'correct' | 'underweighted' | 'overweighted' | 'missing_in_ist';
+export type CompareStatus = 'correct' | 'underweighted' | 'overweighted' | 'missing_in_ist' | 'missing_in_soll';
 
 export interface CompareResult {
   path: NodePath;

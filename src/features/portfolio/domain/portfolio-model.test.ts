@@ -21,14 +21,14 @@ function createStandardIstTree(): IstNode {
         ownValue: 20,
         children: [
           {
-            path: 'root/Equity/USA',
-            label: 'USA',
+            path: 'root/ETF/Developed',
+            label: 'Developed',
             ownValue: 10,
             children: [],
           },
           {
-            path: 'root/Equity/Europa',
-            label: 'Europa',
+            path: 'root/ETF/Emerging',
+            label: 'Emerging',
             ownValue: 10,
             children: [],
           },
