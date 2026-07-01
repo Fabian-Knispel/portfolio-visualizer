@@ -438,7 +438,6 @@ export function PortfolioWorkspace({
           </button>
 
           <button className="tree-node__select" onClick={() => updateSelectedPath(node.path)} type="button">
-            <span className="tree-node__status-dot" aria-hidden="true" />
             <span className="tree-node__label">{node.label}</span>
           </button>
 

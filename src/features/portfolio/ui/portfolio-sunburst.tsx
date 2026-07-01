@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { arc } from 'd3';
 
 import { formatPercentageValue } from '../domain/portfolio-model';
@@ -13,13 +14,31 @@ interface PortfolioSunburstProps {
 
 interface TooltipState {
   slice: SunburstSlice;
+  x: number;
+  y: number;
 }
 
 const VIEWBOX_SIZE = 720;
 const CHART_RADIUS = VIEWBOX_SIZE / 2 - 24;
 
 export function PortfolioSunburst({ root, title, hint }: PortfolioSunburstProps) {
+  const chartRef = useRef<HTMLDivElement | null>(null);
   const [hoveredSlice, setHoveredSlice] = useState<TooltipState | null>(null);
+
+  function getTooltipPosition(event: ReactPointerEvent<SVGPathElement>): { x: number; y: number } {
+    const chart = chartRef.current;
+
+    if (chart === null) {
+      return { x: 0, y: 0 };
+    }
+
+    const bounds = chart.getBoundingClientRect();
+
+    return {
+      x: event.clientX - bounds.left + 14,
+      y: event.clientY - bounds.top + 14,
+    };
+  }
 
   useEffect(() => {
     setHoveredSlice(null);
@@ -50,7 +69,7 @@ export function PortfolioSunburst({ root, title, hint }: PortfolioSunburstProps)
   }
 
   return (
-    <div className="sunburst-chart">
+    <div className="sunburst-chart" ref={chartRef}>
       <svg
         aria-label={title}
         className="sunburst-chart__svg"
@@ -76,7 +95,14 @@ export function PortfolioSunburst({ root, title, hint }: PortfolioSunburstProps)
                 className={`sunburst-chart__segment ${isActive ? 'sunburst-chart__segment--active' : ''}`}
                 d={arcGenerator(slice) ?? undefined}
                 style={{ fill: `var(--sunburst-depth-${fillLevel})` }}
-                onPointerEnter={() => setHoveredSlice({ slice })}
+                onPointerEnter={(event) => {
+                  const pointer = getTooltipPosition(event);
+                  setHoveredSlice({ slice, ...pointer });
+                }}
+                onPointerMove={(event) => {
+                  const pointer = getTooltipPosition(event);
+                  setHoveredSlice({ slice, ...pointer });
+                }}
                 onPointerLeave={() => setHoveredSlice(null)}
               />
             );
@@ -84,23 +110,21 @@ export function PortfolioSunburst({ root, title, hint }: PortfolioSunburstProps)
         </g>
       </svg>
 
-      <div className="sunburst-tooltip" aria-live="polite">
-        {tooltipSlice === null ? (
-          <p className="sunburst-tooltip__hint">Hover auf ein Segment zeigt Label und Prozentwerte.</p>
-        ) : (
-          <>
-            <p className="sunburst-tooltip__label">{tooltipSlice.label}</p>
-            <div className="sunburst-tooltip__row">
-              <span>Anteil gesamt</span>
-              <strong>{formatPercentageValue(tooltipSlice.pctTotal)}</strong>
-            </div>
-            <div className="sunburst-tooltip__row">
-              <span>Anteil Parent</span>
-              <strong>{formatPercentageValue(tooltipSlice.pctOfParent)}</strong>
-            </div>
-          </>
-        )}
-      </div>
+      {tooltipSlice === null ? <p className="sunburst-tooltip__hint">Hover auf ein Segment zeigt Label und Prozentwerte.</p> : null}
+
+      {hoveredSlice !== null ? (
+        <div className="sunburst-tooltip sunburst-tooltip--cursor" aria-live="polite" style={{ left: hoveredSlice.x, top: hoveredSlice.y }}>
+          <p className="sunburst-tooltip__label">{tooltipSlice?.label}</p>
+          <div className="sunburst-tooltip__row">
+            <span>Anteil gesamt</span>
+            <strong>{formatPercentageValue(tooltipSlice?.pctTotal)}</strong>
+          </div>
+          <div className="sunburst-tooltip__row">
+            <span>Anteil Parent</span>
+            <strong>{formatPercentageValue(tooltipSlice?.pctOfParent)}</strong>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
