@@ -65,14 +65,15 @@ export function createPortfolioStore(
   let currentState = initialLoad.state;
   let loadError = initialLoad.error;
   let saveError: string | null = initialLoad.error;
+  let currentSnapshot = createStoreSnapshot(currentState, loadError, saveError);
   const listeners = new Set<PortfolioStoreListener>();
 
   function emit(): PortfolioStoreSnapshot {
-    const snapshot = createStoreSnapshot(currentState, loadError, saveError);
+    currentSnapshot = createStoreSnapshot(currentState, loadError, saveError);
 
-    listeners.forEach((listener) => listener(snapshot));
+    listeners.forEach((listener) => listener(currentSnapshot));
 
-    return snapshot;
+    return currentSnapshot;
   }
 
   function persistCurrentState(): PortfolioStoreSnapshot {
@@ -89,13 +90,13 @@ export function createPortfolioStore(
 
   return {
     getState() {
-      return createStoreSnapshot(currentState, loadError, saveError);
+      return currentSnapshot;
     },
 
     subscribe(listener: PortfolioStoreListener) {
       listeners.add(listener);
 
-      listener(createStoreSnapshot(currentState, loadError, saveError));
+      listener(currentSnapshot);
 
       return () => {
         listeners.delete(listener);
