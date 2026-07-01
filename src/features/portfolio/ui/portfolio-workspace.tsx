@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 
 import {
   ROOT_NODE_PATH,
+  exampleIstHierarchy,
+  exampleSollHierarchy,
   type IstNode,
   type NodePath,
   type PortfolioNodeBase,
@@ -15,6 +17,8 @@ import {
   isRootNodePath,
 } from '../domain/portfolio-model';
 import { portfolioStore, type PortfolioStoreSnapshot } from '../state/portfolio-store';
+import { PortfolioSunburst } from './portfolio-sunburst';
+import { buildSollSunburstDatum } from './sunburst-model';
 
 type ViewMode = 'soll' | 'ist' | 'vergleich';
 
@@ -42,19 +46,11 @@ function usePortfolioSnapshot(): PortfolioStoreSnapshot {
 }
 
 function createSollRoot(): SollNode {
-  return {
-    path: ROOT_NODE_PATH,
-    label: 'Portfolio',
-    children: [],
-  };
+  return exampleSollHierarchy;
 }
 
 function createIstRoot(): IstNode {
-  return {
-    path: ROOT_NODE_PATH,
-    label: 'Portfolio',
-    children: [],
-  };
+  return exampleIstHierarchy;
 }
 
 function findNodeByPath<TNode extends PortfolioNodeBase<TNode>>(root: TNode | null, path: NodePath): TNode | null {
@@ -246,6 +242,7 @@ export function PortfolioWorkspace() {
 
   const currentRoot = activeViewMode === 'soll' ? snapshot.sollRoot : activeViewMode === 'ist' ? snapshot.istRoot : snapshot.sollRoot;
   const comparisonRoot = snapshot.istRoot;
+  const sollSunburstRoot = useMemo(() => buildSollSunburstDatum(snapshot.sollRoot), [snapshot.sollRoot]);
   const selectedPath = selectedPaths[activeViewMode];
   const selectedNode = findNodeByPath(currentRoot, selectedPath);
   const parentPath = selectedNode === null ? ROOT_NODE_PATH : getParentPath(selectedNode.path);
@@ -434,7 +431,24 @@ export function PortfolioWorkspace() {
       </header>
 
       <div className="workspace-body">
-        <section className="panel panel--tree">
+        <div className="workspace-main">
+          <section className="panel panel--sunburst">
+            <div className="panel__header panel__header--stacked">
+              <div>
+                <p className="panel__eyebrow">Sunburst</p>
+                <h2>SOLL</h2>
+              </div>
+              <p className="panel__hint">Hover zeigt Label und Prozentwerte. IST kann später über denselben Adapter ergänzt werden.</p>
+            </div>
+
+            <PortfolioSunburst
+              root={sollSunburstRoot}
+              title="SOLL"
+              hint="Für die Sunburst-Ansicht sind noch keine SOLL-Daten vorhanden."
+            />
+          </section>
+
+          <section className="panel panel--tree">
           <div className="panel__header">
             <div>
               <p className="panel__eyebrow">Baumansicht</p>
@@ -461,7 +475,8 @@ export function PortfolioWorkspace() {
               ))}
             </ul>
           )}
-        </section>
+          </section>
+        </div>
 
         <aside className="panel panel--sidebar">
           <div className="panel__header panel__header--stacked">

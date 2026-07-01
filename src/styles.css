@@ -99,6 +99,11 @@ button {
   align-items: start;
 }
 
+.workspace-main {
+  display: grid;
+  gap: 20px;
+}
+
 .panel {
   border-radius: 28px;
   background: rgba(255, 255, 255, 0.82);
@@ -108,6 +113,10 @@ button {
 }
 
 .panel--tree {
+  padding: 24px;
+}
+
+.panel--sunburst {
   padding: 24px;
 }
 
@@ -160,6 +169,97 @@ button {
   border: 1px dashed rgba(16, 32, 51, 0.18);
   border-radius: 18px;
   background: rgba(246, 243, 234, 0.74);
+}
+
+.sunburst-chart {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+}
+
+.sunburst-chart__svg {
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+  overflow: visible;
+}
+
+.sunburst-chart__center {
+  fill: rgba(255, 255, 255, 0.94);
+  stroke: rgba(16, 32, 51, 0.08);
+  stroke-width: 1.25;
+}
+
+.sunburst-chart__center-label {
+  fill: #102033;
+  font-size: 1.18rem;
+  font-weight: 700;
+}
+
+.sunburst-chart__center-value {
+  fill: #5f7187;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.sunburst-chart__segment {
+  stroke: rgba(255, 255, 255, 0.78);
+  stroke-width: 1.25;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease,
+    stroke-width 160ms ease;
+  transform-origin: center;
+}
+
+.sunburst-chart__segment:hover,
+.sunburst-chart__segment--active {
+  opacity: 0.92;
+  stroke-width: 2;
+}
+
+.sunburst-tooltip {
+  width: min(100%, 320px);
+  align-self: end;
+  justify-self: end;
+  border-radius: 18px;
+  border: 1px solid rgba(16, 32, 51, 0.08);
+  background: rgba(246, 243, 234, 0.82);
+  padding: 14px 16px;
+  box-shadow: 0 16px 38px rgba(16, 32, 51, 0.08);
+}
+
+.sunburst-tooltip__hint,
+.sunburst-tooltip__label {
+  margin: 0;
+}
+
+.sunburst-tooltip__hint {
+  color: #5f7187;
+}
+
+.sunburst-tooltip__label {
+  color: #102033;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.sunburst-tooltip__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 6px 0;
+  color: #48607b;
+}
+
+.sunburst-empty-state {
+  padding: 22px;
+  border-radius: 18px;
+  border: 1px dashed rgba(16, 32, 51, 0.18);
+  background: rgba(246, 243, 234, 0.74);
+  color: #5f7187;
 }
 
 .tree-node {
@@ -315,6 +415,10 @@ button {
     grid-template-columns: 1fr;
   }
 
+  .workspace-main {
+    order: 1;
+  }
+
   .panel--sidebar {
     position: static;
   }
@@ -339,5 +443,9 @@ button {
   .detail-card__row {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .sunburst-tooltip {
+    justify-self: stretch;
   }
 }
