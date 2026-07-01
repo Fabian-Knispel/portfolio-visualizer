@@ -69,6 +69,8 @@ Die bestehenden SOLL/IST/Vergleich-Tabs steuern direkt, welcher Statuskontext si
 - **Gemeinsamer State:** `activeViewMode` auf App-Root-Ebene
 - **Synchronisiert:** Tree und Sunburst zeigen immer denselben Modus
 - Umschalten eines Tabs ändert beide Visualisierungen
+- Der View-Toggle ist reine UI-Zuständigkeit und verändert weder `sollRoot` noch `istRoot`
+- Dadurch bleiben SOLL/IST-Modus und Auswahlzustand stabil, auch wenn die Darstellung wechselt
 
 ---
 

@@ -20,7 +20,14 @@ import { portfolioStore, type PortfolioStoreSnapshot } from '../state/portfolio-
 import { PortfolioSunburst } from './portfolio-sunburst';
 import { buildSunburstDatumForMode, type SunburstMode } from './sunburst-model';
 
-type ViewMode = 'soll' | 'ist' | 'vergleich';
+export type ViewMode = 'soll' | 'ist' | 'vergleich';
+
+interface PortfolioWorkspaceProps {
+  activeViewMode: ViewMode;
+  onActiveViewModeChange(mode: ViewMode): void;
+  sunburstMode: SunburstMode;
+  onSunburstModeChange(mode: SunburstMode): void;
+}
 
 interface EditorDraft {
   label: string;
@@ -236,10 +243,13 @@ function SunburstModeTab({
   );
 }
 
-export function PortfolioWorkspace() {
+export function PortfolioWorkspace({
+  activeViewMode,
+  onActiveViewModeChange,
+  sunburstMode,
+  onSunburstModeChange,
+}: PortfolioWorkspaceProps) {
   const snapshot = usePortfolioSnapshot();
-  const [activeViewMode, setActiveViewMode] = useState<ViewMode>('soll');
-  const [sunburstMode, setSunburstMode] = useState<SunburstMode>('soll');
   const [selectedPaths, setSelectedPaths] = useState<Record<ViewMode, NodePath>>({
     soll: ROOT_NODE_PATH,
     ist: ROOT_NODE_PATH,
@@ -451,13 +461,13 @@ export function PortfolioWorkspace() {
         </div>
         <div className="workspace-header__controls">
           <div className="mode-tabs" role="tablist" aria-label="Ansicht wählen">
-            <ViewModeTab mode="soll" activeMode={activeViewMode} onChange={setActiveViewMode} label="SOLL" />
-            <ViewModeTab mode="ist" activeMode={activeViewMode} onChange={setActiveViewMode} label="IST" />
-            <ViewModeTab mode="vergleich" activeMode={activeViewMode} onChange={setActiveViewMode} label="Vergleich" />
+            <ViewModeTab mode="soll" activeMode={activeViewMode} onChange={onActiveViewModeChange} label="SOLL" />
+            <ViewModeTab mode="ist" activeMode={activeViewMode} onChange={onActiveViewModeChange} label="IST" />
+            <ViewModeTab mode="vergleich" activeMode={activeViewMode} onChange={onActiveViewModeChange} label="Vergleich" />
           </div>
           <div className="mode-tabs" role="tablist" aria-label="Sunburst-Modus wählen">
-            <SunburstModeTab mode="soll" activeMode={sunburstMode} onChange={setSunburstMode} label="Sunburst SOLL" />
-            <SunburstModeTab mode="ist" activeMode={sunburstMode} onChange={setSunburstMode} label="Sunburst IST" />
+            <SunburstModeTab mode="soll" activeMode={sunburstMode} onChange={onSunburstModeChange} label="Sunburst SOLL" />
+            <SunburstModeTab mode="ist" activeMode={sunburstMode} onChange={onSunburstModeChange} label="Sunburst IST" />
           </div>
         </div>
       </header>

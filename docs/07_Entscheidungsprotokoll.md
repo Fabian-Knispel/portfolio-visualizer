@@ -25,6 +25,7 @@ Bei Konflikten zwischen Dokumenten gilt: **Eintragungsdatum im Protokoll + norma
 | 2026-07-01 | Datenmodell | Prozentwerte werden zentral mit voller Präzision berechnet und in beiden Views einheitlich auf 2 Nachkommastellen angezeigt; Root-Parent bleibt `—`, `totalValue = 0` zeigt `0,00 %` | Eindeutige Anzeigevorgaben, keine Division durch 0, konsistente Sunburst-/Baumdarstellung | Entschieden |
 | 2026-07-01 | Visualisierung | Sunburst zunächst nur für SOLL umgesetzt, aber über eine separate Transformationsschicht vorbereitet, damit IST später ohne Chart-Umbau ergänzt werden kann | Kleine, sichere Erweiterung mit klarer Trennung von Domain und Rendering | Entschieden |
 | 2026-07-01 | Visualisierung | SOLL/IST-Sunburst wird per Workspace-Schalter umgeschaltet; Hover-Zustand wird beim Wechsel zurückgesetzt | Kein Mischzustand, klare Zustandsgrenze, Konsistenz der Anzeige | Entschieden |
+| 2026-07-01 | UI-State | View-Toggle und Sunburst-Modus liegen im App-Root-State; fachliche Portfolio-Daten bleiben davon getrennt | Verhindert unerwartete Resets beim Umschalten und hält Darstellungs- sowie Fachzustand unabhängig | Entschieden |
 
 ## Hinweise zur Pflege
 
