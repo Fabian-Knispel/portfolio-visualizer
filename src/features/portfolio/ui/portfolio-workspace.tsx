@@ -52,7 +52,7 @@ type TreeStatus =
   | 'underweighted'
   | 'overweighted'
   | 'missing_in_ist'
-  | 'missing_in_soll';
+  | 'extra_in_ist';
 
 interface TreePresentation {
   status?: TreeStatus;
@@ -245,7 +245,7 @@ function formatCompareStatus(status: string): string {
     underweighted: '↓ Untergewichtet',
     overweighted: '↑ Übergewichtet',
     missing_in_ist: '— Fehlt im IST',
-    missing_in_soll: '— Fehlt im SOLL',
+    extra_in_ist: '— Extra im IST',
   };
   return labels[status] ?? status;
 }

@@ -322,7 +322,7 @@ button {
   border-style: dashed;
 }
 
-.tree-node[data-status='missing_in_soll'] {
+.tree-node[data-status='extra_in_ist'] {
   border-color: rgba(148, 163, 184, 0.82);
   border-style: dashed;
 }

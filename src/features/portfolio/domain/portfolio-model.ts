@@ -37,7 +37,7 @@ export type PortfolioTab = 'soll' | 'ist' | 'vergleich';
 
 export type FreenessStatus = 'correct' | 'free' | 'overallocated';
 
-export type CompareStatus = 'correct' | 'underweighted' | 'overweighted' | 'missing_in_ist' | 'missing_in_soll';
+export type CompareStatus = 'correct' | 'underweighted' | 'overweighted' | 'missing_in_ist' | 'extra_in_ist';
 
 export interface CompareResult {
   path: NodePath;
@@ -539,7 +539,7 @@ export function buildCompareRows(sollRoot: SollNode | null, istRoot: IstComputed
         sollTargetPct: ZERO,
         istPct,
         deltaPctPoints: istPct,
-        status: 'missing_in_soll',
+        status: 'extra_in_ist',
       };
     }
 
