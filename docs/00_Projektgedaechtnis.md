@@ -1,11 +1,11 @@
 # Projektgedächtnis: Portfolio-Visualisierung
 
 ## Aktuelle Projektphase
-**Phase: Komponenten-Design und UI-Sockel in Umsetzung**
+**Phase: MVP 1.0 abgeschlossen**
 
-*(Fortschritt: 6 von 7 Phasen angestoßen, davon 1 bereits sichtbar umgesetzt)*
+*(Fortschritt: 7 von 7 Phasen abgeschlossen)*
 
-**Begründung:** Fachliche Modellierung, UX-Entscheidungen sowie Architektur- und Tech-Stack-Entscheidungen sind dokumentiert. Der nächste Fokus liegt jetzt auf der komponentenbasierten Umsetzung des Seitenbereichs und der Baumansicht auf Basis des bestehenden Datenmodells.
+**Begründung:** Der definierte MVP-Basisumfang wurde umgesetzt und abgenommen. Bereits vorhandene Zusatzfeatures (z. B. SOLL/IST-Vergleichsstatus) sind bewusst nicht abnahmekritisch für den MVP-Status.
 
 ---
 
@@ -140,9 +140,9 @@ docs/
 2. ✅ Phase 2: UX-Entscheidungen (2/2 getroffen)
 3. ✅ Phase 3: Architektur-Entscheidungen (getroffen)
 4. ✅ Phase 4: Tech-Stack-Entscheidungen (getroffen)
-5. [] Phase 5: Datenmodell konkretisieren (TypeScript)
-6. [] Phase 6: Komponenten-Design
-7. [ ] Phase 7: Implementierung
+5. ✅ Phase 5: Datenmodell konkretisieren (TypeScript)
+6. ✅ Phase 6: Komponenten-Design
+7. ✅ Phase 7: Implementierung
 
 ---
 

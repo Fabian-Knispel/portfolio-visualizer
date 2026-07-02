@@ -392,7 +392,7 @@ describe('compare rows', () => {
     });
 
     expect(bonds).toMatchObject({
-      status: 'missing_in_soll',
+      status: 'extra_in_ist',
       sollTargetPct: 0,
     });
     expect(bonds?.istPct).toBeCloseTo(0.3, 10);

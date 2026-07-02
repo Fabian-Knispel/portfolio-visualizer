@@ -29,8 +29,8 @@ Privatanleger, tech-versiert, aber nicht Designer. Einzelnutzer, lokal auf eigen
 - [x] Phase 3: Architektur-Entscheidungen
 - [x] Phase 4: Tech-Stack-Entscheidungen
 - [x] Phase 5: Datenmodell konkretisieren
-- [~] Phase 6: Komponenten-Design und UI-Sockel
-- [ ] Phase 7: Implementierung
+- [x] Phase 6: Komponenten-Design und UI-Sockel
+- [x] Phase 7: Implementierung
 
 ## Starten
 
@@ -125,6 +125,8 @@ Das Projekt enthält jetzt einen React/Vite-Sockel mit Seitenbereich für die ma
 
 ## Status
 
-**Aktuelle Phase:** ✅ Phase 5 abgeschlossen → Phase 6 (Komponenten-Design und UI-Sockel) ist in Umsetzung.
+**MVP 1.0:** ✅ abgeschlossen.
+
+**Hinweis zum Scope:** Enthaltene Zusatzfeatures (z. B. SOLL/IST-Vergleichsstatus) sind vorgezogen umgesetzt und nicht abnahmekritisch fuer den MVP-Basisumfang.
 
 **Repository:** https://github.com/Fabian-Knispel/portfolio-visualizer

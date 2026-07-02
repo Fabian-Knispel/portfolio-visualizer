@@ -18,7 +18,7 @@ localStorage erhalten.
 ## Scope – Draußen (verschoben)
 - Datei-Import (CSV/JSON) – Datenmodell aber importfähig anlegen
 - Mehrere Portfolios/Profile
-- SOLL/IST-Abweichungsvergleich mit Delta-Anzeige
+- SOLL/IST-Abweichungsvergleich mit Delta-Anzeige (als Zusatzfeature bereits vorgezogen umgesetzt; nicht abnahmekritisch für den MVP-Basisumfang)
 - Drag-and-Drop-Reordering
 - JSON-Export als Sicherheitsnetz
 - Vereinfachter App-Start (Skript/.exe)
@@ -67,10 +67,17 @@ UX:
 
 ## Ergänzende Festlegungen (verbindlich für 1.0)
 
-- Release 1.0 enthält **keine** SOLL/IST-Abweichungsbewertung (kein Delta, keine Over/Under-Statuslogik).
+- Release 1.0 wird gegen den MVP-Basisumfang abgenommen; vorgezogene Zusatzfeatures ändern den MVP-Status nicht.
+- Eine vorhandene SOLL/IST-Abweichungsbewertung ist als nicht-blockierende Erweiterung zulässig.
 - Prozentberechnung intern mit voller Präzision; Anzeige auf **2 Nachkommastellen**.
 - Für Root-Knoten wird `Anteil am Parent` als **„—“** dargestellt.
 - Edge Case `totalValue = 0`:
   - Keine Division durch 0
   - Prozentanzeigen in IST als **0,00 %**
 - Sunburst und Baumansicht verwenden dieselbe zentrale Berechnungslogik für Prozentwerte.
+
+## Abnahmeentscheidung
+
+- **Datum:** 2026-07-02
+- **Status:** MVP 1.0 abgeschlossen
+- **Geltung:** Der MVP-Basisumfang ist erfüllt; vorgezogene Zusatzfeatures (insb. SOLL/IST-Vergleich) bleiben optional und nicht abnahmekritisch.

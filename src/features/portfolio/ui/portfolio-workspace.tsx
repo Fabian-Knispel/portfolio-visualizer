@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, JSX } from 'react';
 
 import {
@@ -19,7 +19,7 @@ import {
   formatPercentageValue,
   isRootNodePath,
 } from '../domain/portfolio-model';
-import { portfolioStore, type PortfolioStoreSnapshot } from '../state/portfolio-store';
+import { portfolioStore, type PortfolioStoreSnapshot, usePortfolioStoreSnapshot } from '../state/portfolio-store';
 import { PortfolioSunburst } from './portfolio-sunburst';
 import { buildSunburstDatumForMode, type SunburstMode } from './sunburst-model';
 
@@ -65,14 +65,6 @@ interface TreePresentation {
 interface NumericValidationResult {
   parsedValue: number | undefined;
   error: string | null;
-}
-
-function usePortfolioSnapshot(): PortfolioStoreSnapshot {
-  return useSyncExternalStore(
-    (onStoreChange) => portfolioStore.subscribe(() => onStoreChange()),
-    () => portfolioStore.getState(),
-    () => portfolioStore.getState()
-  );
 }
 
 function createSollRoot(): SollNode {
@@ -276,7 +268,7 @@ export function PortfolioWorkspace({
   activeViewMode,
   onActiveViewModeChange,
 }: PortfolioWorkspaceProps) {
-  const snapshot = usePortfolioSnapshot();
+  const snapshot = usePortfolioStoreSnapshot();
   const childInputRef = useRef<HTMLInputElement | null>(null);
   const [sunburstMode, setSunburstMode] = useState<SunburstMode>('soll');
   const [collapsedTreeNodes, setCollapsedTreeNodes] = useState<Record<NodePath, boolean>>({});

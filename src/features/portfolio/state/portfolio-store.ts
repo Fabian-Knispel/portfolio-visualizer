@@ -13,6 +13,8 @@ import {
   loadPortfolioStorageState,
   savePortfolioStorageState,
 } from '../domain/portfolio-storage';
+import { useStore } from 'zustand';
+import { createStore, type StoreApi } from 'zustand/vanilla';
 
 export interface PortfolioStoreSnapshot extends PortfolioStorageState {
   loadError: string | null;
@@ -22,6 +24,7 @@ export interface PortfolioStoreSnapshot extends PortfolioStorageState {
 export type PortfolioStoreListener = (state: PortfolioStoreSnapshot) => void;
 
 export interface PortfolioStore {
+  readonly stateStore: StoreApi<PortfolioStoreSnapshot>;
   getState(): PortfolioStoreSnapshot;
   subscribe(listener: PortfolioStoreListener): () => void;
   setSollRoot(root: SollNode | null): PortfolioStoreSnapshot;
@@ -65,15 +68,14 @@ export function createPortfolioStore(
   let currentState = initialLoad.state;
   let loadError = initialLoad.error;
   let saveError: string | null = initialLoad.error;
-  let currentSnapshot = createStoreSnapshot(currentState, loadError, saveError);
-  const listeners = new Set<PortfolioStoreListener>();
+  const stateStore = createStore<PortfolioStoreSnapshot>(() => createStoreSnapshot(currentState, loadError, saveError));
 
   function emit(): PortfolioStoreSnapshot {
-    currentSnapshot = createStoreSnapshot(currentState, loadError, saveError);
+    const nextSnapshot = createStoreSnapshot(currentState, loadError, saveError);
 
-    listeners.forEach((listener) => listener(currentSnapshot));
+    stateStore.setState(nextSnapshot, true);
 
-    return currentSnapshot;
+    return nextSnapshot;
   }
 
   function persistCurrentState(): PortfolioStoreSnapshot {
@@ -89,18 +91,18 @@ export function createPortfolioStore(
   }
 
   return {
+    stateStore,
+
     getState() {
-      return currentSnapshot;
+      return stateStore.getState();
     },
 
     subscribe(listener: PortfolioStoreListener) {
-      listeners.add(listener);
+      const unsubscribe = stateStore.subscribe((nextState) => listener(nextState));
 
-      listener(currentSnapshot);
+      listener(stateStore.getState());
 
-      return () => {
-        listeners.delete(listener);
-      };
+      return unsubscribe;
     },
 
     setSollRoot(root: SollNode | null) {
@@ -229,3 +231,7 @@ export function createPortfolioStore(
 }
 
 export const portfolioStore = createPortfolioStore();
+
+export function usePortfolioStoreSnapshot(): PortfolioStoreSnapshot {
+  return useStore(portfolioStore.stateStore, (state) => state);
+}
