@@ -13,6 +13,7 @@ export interface PortfolioNodeBase<TChild> {
 export interface SollNode extends PortfolioNodeBase<SollNode> {
   targetPct?: number;
   targetPctOfParent?: number;
+  lastEditedTargetField?: 'targetPct' | 'targetPctOfParent';
 }
 
 export interface IstNode extends PortfolioNodeBase<IstNode> {
@@ -97,11 +98,22 @@ function computeAbsoluteTargetPct(node: SollNode, parentAbsoluteTargetPct?: numb
     return HUNDRED;
   }
 
+  const preferParentPct = node.lastEditedTargetField === 'targetPctOfParent';
+
+  if (preferParentPct && hasFiniteNumber(node.targetPctOfParent) && hasFiniteNumber(parentAbsoluteTargetPct)) {
+    return parentAbsoluteTargetPct * (node.targetPctOfParent / HUNDRED);
+  }
+
+  if (hasFiniteNumber(node.targetPct)) {
+    return normalizeNumber(node.targetPct);
+  }
+
+  // Fallback, falls targetPct fehlt, targetPctOfParent aber vorhanden ist
   if (hasFiniteNumber(node.targetPctOfParent) && hasFiniteNumber(parentAbsoluteTargetPct)) {
     return parentAbsoluteTargetPct * (node.targetPctOfParent / HUNDRED);
   }
 
-  return normalizeNumber(node.targetPct);
+  return ZERO;
 }
 
 function computeTargetPctOfParent(node: SollNode, parentAbsoluteTargetPct?: number): number | undefined {
@@ -109,12 +121,14 @@ function computeTargetPctOfParent(node: SollNode, parentAbsoluteTargetPct?: numb
     return undefined;
   }
 
-  if (hasFiniteNumber(node.targetPctOfParent)) {
+  const preferAbsolutePct = node.lastEditedTargetField === 'targetPct';
+
+  if (!preferAbsolutePct && hasFiniteNumber(node.targetPctOfParent)) {
     return node.targetPctOfParent;
   }
 
   if (!hasFiniteNumber(node.targetPct)) {
-    return undefined;
+    return hasFiniteNumber(node.targetPctOfParent) ? node.targetPctOfParent : undefined;
   }
 
   return (node.targetPct / parentAbsoluteTargetPct) * HUNDRED;
@@ -441,7 +455,9 @@ export function computeFreenessStatus(node: SollNode): FreenessResult | null {
   const parentTargetPct = HUNDRED;
   const parentAbsoluteTargetPct = isRootNodePath(node.path) ? HUNDRED : normalizeNumber(node.targetPct);
   const childrenTargetSumPct = node.children.reduce((sum, child) => {
-    const childPctOfParent = computeTargetPctOfParent(child, parentAbsoluteTargetPct);
+    const childPctOfParent = hasFiniteNumber(child.targetPctOfParent)
+      ? child.targetPctOfParent
+      : computeTargetPctOfParent(child, parentAbsoluteTargetPct);
 
     return sum + normalizeNumber(childPctOfParent);
   }, ZERO);

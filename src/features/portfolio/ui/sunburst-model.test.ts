@@ -71,6 +71,51 @@ describe('sunburst model', () => {
     expect(tagesgeld?.pctTotal).toBeCloseTo(0.08, 10);
   });
 
+  it('keeps parent slices at their own total even when children do not fill them completely', () => {
+    const sollRoot: SollNode = {
+      path: ROOT_NODE_PATH,
+      label: 'Portfolio',
+      targetPctOfParent: 100,
+      children: [
+        {
+          path: buildNodePath('Equity'),
+          label: 'Equity',
+          targetPctOfParent: 40,
+          children: [
+            {
+              path: buildNodePath('Equity', 'Core'),
+              label: 'Core',
+              targetPctOfParent: 25,
+              children: [],
+            },
+          ],
+        },
+        {
+          path: buildNodePath('Cash'),
+          label: 'Cash',
+          targetPctOfParent: 60,
+          children: [],
+        },
+      ],
+    };
+
+    const root = buildSollSunburstDatum(sollRoot);
+    const slices = buildSunburstSlices(root, 200);
+    const equity = slices.find((slice) => slice.path === buildNodePath('Equity'));
+    const core = slices.find((slice) => slice.path === buildNodePath('Equity', 'Core'));
+    const residual = slices.find((slice) => slice.path === `${buildNodePath('Equity')}/__unallocated__`);
+
+    expect(equity?.pctTotal).toBeCloseTo(0.4, 10);
+    expect(core?.pctTotal).toBeCloseTo(0.1, 10);
+    expect(core?.pctOfParent).toBeCloseTo(0.25, 10);
+    expect(residual).toMatchObject({
+      label: 'Fehlende Allokation',
+      isResidual: true,
+    });
+    expect(residual?.pctTotal).toBeCloseTo(0.3, 10);
+    expect(residual?.pctOfParent).toBeCloseTo(0.75, 10);
+  });
+
   it('selects the correct datum for the active sunburst mode', () => {
     const sollRoot = buildSunburstDatumForMode('soll', exampleSollHierarchy, null);
     const istRoot = buildSunburstDatumForMode('ist', null, computeIstPercentages(computeIstNodeValues(exampleIstHierarchy)));

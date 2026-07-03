@@ -5,6 +5,7 @@ import {
   buildCompareRows,
   buildNodePath,
   computeCompareStatus,
+  computeFreenessStatus,
   computePercentageValues,
   computeSollPercentages,
   findNodeByPath,
@@ -353,6 +354,17 @@ describe('SOLL percentages and status derivations', () => {
     expect(legacy.pctTotal).toBeCloseTo(0.25, 10);
     expect(legacy.pctOfParent).toBeCloseTo(0.25, 10);
     expect(legacy.targetPctOfParent).toBeCloseTo(25, 10);
+  });
+
+  it('keeps freeness child sums stable for raw non-root nodes that only store targetPctOfParent', () => {
+    const equity = findNodeByPath(createSollTree(), buildNodePath('Equity'));
+    const freeness = equity === null ? null : computeFreenessStatus(equity);
+
+    expect(freeness).toMatchObject({
+      path: buildNodePath('Equity'),
+      childrenTargetSumPct: 50,
+      status: 'free',
+    });
   });
 
   it('derives compare statuses including epsilon-stable equality and missing cases', () => {

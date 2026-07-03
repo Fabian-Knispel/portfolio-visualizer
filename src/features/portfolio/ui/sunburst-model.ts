@@ -11,6 +11,7 @@ export interface SunburstNodeDatum {
   label: string;
   size: number;
   children: SunburstNodeDatum[];
+  isResidual?: boolean;
 }
 
 export interface SunburstSlice {
@@ -20,6 +21,7 @@ export interface SunburstSlice {
   value: number;
   pctTotal: number;
   pctOfParent?: number;
+  isResidual: boolean;
   startAngle: number;
   endAngle: number;
   innerRadius: number;
@@ -52,11 +54,24 @@ export function buildSollSunburstDatum(root: SollNode | null): SunburstNodeDatum
 
   function transformNode(node: SollComputedNode): SunburstNodeDatum {
     const children = node.children.map(transformNode);
+    const nodeSize = normalizeSize(node.pctTotal * 100);
+    const childrenSize = node.children.reduce((sum, child) => sum + normalizeSize(child.pctTotal * 100), 0);
+    const residualSize = normalizeSize(nodeSize - childrenSize);
+
+    if (node.children.length > 0 && residualSize > 0) {
+      children.push({
+        path: `${node.path}/__unallocated__`,
+        label: 'Fehlende Allokation',
+        size: residualSize,
+        children: [],
+        isResidual: true,
+      });
+    }
 
     return {
       path: node.path,
       label: node.label,
-      size: children.length === 0 ? normalizeSize(node.pctTotal * 100) : 0,
+      size: node.children.length === 0 ? nodeSize : 0,
       children,
     };
   }
@@ -99,7 +114,7 @@ export function buildSunburstSlices(root: SunburstNodeDatum | null, radius: numb
 
   return layoutRoot
     .descendants()
-    .slice(1)
+    .filter((node) => node.depth > 0)
     .map((node) => {
       const value = node.value ?? 0;
       const parentValue = node.parent?.value ?? 0;
@@ -111,6 +126,7 @@ export function buildSunburstSlices(root: SunburstNodeDatum | null, radius: numb
         value,
         pctTotal: totalValue === 0 ? 0 : value / totalValue,
         pctOfParent: node.parent === null || parentValue === 0 ? undefined : value / parentValue,
+        isResidual: node.data.isResidual === true,
         startAngle: node.x0,
         endAngle: node.x1,
         innerRadius: node.y0,
