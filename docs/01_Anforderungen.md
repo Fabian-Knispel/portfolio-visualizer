@@ -16,6 +16,9 @@
 - Keine Aggregation, keine Summenzwänge
 - Keine Normalisierung
 - Freeness-Bewertung ist diagnostisch und blockiert Eingaben nicht
+- targetPctOfParent als primäres SOLL-Eingabefeld für Nicht-Root
+- Root fachlich immer 100%
+- targetPct als Legacy-Fallback
 
 ## IST-Modell (Reales Portfolio)
 
@@ -24,6 +27,7 @@
 - `totalValue = Σ(nodeValue aller Top-Level-Knoten)`
 - `pct(node) = nodeValue / totalValue`
 - `uncategorized` automatischer IST-Knoten
+- Root fachlich immer 100%
 
 ## Bewertungskategorien
 
