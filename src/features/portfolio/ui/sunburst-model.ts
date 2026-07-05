@@ -1,5 +1,5 @@
-import { hierarchy, partition } from 'd3';
-import type { HierarchyRectangularNode } from 'd3';
+import { hierarchy, partition } from 'd3-hierarchy';
+import type { HierarchyRectangularNode } from 'd3-hierarchy';
 
 import { computeSollPercentages } from '../domain/portfolio-model';
 import type { IstComputedNode, SollComputedNode, SollNode } from '../domain/portfolio-model';

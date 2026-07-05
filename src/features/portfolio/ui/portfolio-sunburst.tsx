@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { arc } from 'd3';
+import { arc } from 'd3-shape';
 
 import { formatPercentageValue } from '../domain/portfolio-model';
 import type { SunburstNodeDatum, SunburstSlice } from './sunburst-model';
