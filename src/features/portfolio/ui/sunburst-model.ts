@@ -12,6 +12,7 @@ export interface SunburstNodeDatum {
   size: number;
   children: SunburstNodeDatum[];
   isResidual?: boolean;
+  residualKind?: 'missing_allocation' | 'direct_position';
 }
 
 export interface SunburstSlice {
@@ -22,6 +23,7 @@ export interface SunburstSlice {
   pctTotal: number;
   pctOfParent?: number;
   isResidual: boolean;
+  residualKind?: 'missing_allocation' | 'direct_position';
   startAngle: number;
   endAngle: number;
   innerRadius: number;
@@ -65,6 +67,7 @@ export function buildSollSunburstDatum(root: SollNode | null): SunburstNodeDatum
         size: residualSize,
         children: [],
         isResidual: true,
+        residualKind: 'missing_allocation',
       });
     }
 
@@ -85,11 +88,25 @@ export function buildIstSunburstDatum(root: IstComputedNode | null): SunburstNod
   }
 
   function transformNode(node: IstComputedNode): SunburstNodeDatum {
+    const children = node.children.map(transformNode);
+    const ownSize = normalizeSize(node.ownValue);
+
+    if (node.children.length > 0 && ownSize > 0) {
+      children.push({
+        path: `${node.path}/__direct_position__`,
+        label: 'Direktposition',
+        size: ownSize,
+        children: [],
+        isResidual: true,
+        residualKind: 'direct_position',
+      });
+    }
+
     return {
       path: node.path,
       label: node.label,
-      size: normalizeSize(node.ownValue),
-      children: node.children.map(transformNode),
+      size: node.children.length === 0 ? ownSize : 0,
+      children,
     };
   }
 
@@ -127,6 +144,7 @@ export function buildSunburstSlices(root: SunburstNodeDatum | null, radius: numb
         pctTotal: totalValue === 0 ? 0 : value / totalValue,
         pctOfParent: node.parent === null || parentValue === 0 ? undefined : value / parentValue,
         isResidual: node.data.isResidual === true,
+        residualKind: node.data.residualKind,
         startAngle: node.x0,
         endAngle: node.x1,
         innerRadius: node.y0,

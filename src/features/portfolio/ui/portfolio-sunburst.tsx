@@ -34,10 +34,22 @@ function canRenderSliceLabel(slice: SunburstSlice): boolean {
 
 function getSliceLabel(slice: SunburstSlice): string {
   if (slice.isResidual) {
-    return 'Fehlt';
+    return slice.residualKind === 'direct_position' ? 'Direkt' : 'Fehlt';
   }
 
   return slice.label.length > 14 ? `${slice.label.slice(0, 12)}…` : slice.label;
+}
+
+function getResidualHint(slice: SunburstSlice): string {
+  if (slice.residualKind === 'direct_position') {
+    return 'Dieser Anteil liegt als Direktposition auf dem Parent.';
+  }
+
+  return 'Dieser Anteil ist im Parent noch nicht allokiert.';
+}
+
+function getResidualParentCaption(slice: SunburstSlice): string {
+  return slice.residualKind === 'direct_position' ? 'Direkt am Parent' : 'Fehlt im Parent';
 }
 
 export function PortfolioSunburst({ root, title, hint }: PortfolioSunburstProps) {
@@ -79,6 +91,8 @@ export function PortfolioSunburst({ root, title, hint }: PortfolioSunburstProps)
 
   const tooltipSlice = hoveredSlice?.slice ?? null;
   const labeledSlices = slices.filter(canRenderSliceLabel);
+  const hasMissingAllocationResidual = slices.some((slice) => slice.isResidual && slice.residualKind === 'missing_allocation');
+  const hasDirectPositionResidual = slices.some((slice) => slice.isResidual && slice.residualKind === 'direct_position');
 
   if (root === null || slices.length === 0) {
     return (
@@ -113,12 +127,17 @@ export function PortfolioSunburst({ root, title, hint }: PortfolioSunburstProps)
               slice.isResidual ? 'sunburst-chart__segment--residual' : '',
               isActive ? 'sunburst-chart__segment--active' : '',
             ].filter(Boolean).join(' ');
-            const fill = slice.isResidual ? 'var(--sunburst-residual-fill)' : `var(--sunburst-depth-${fillLevel})`;
+            const fill = slice.isResidual
+              ? slice.residualKind === 'direct_position'
+                ? 'var(--sunburst-direct-fill)'
+                : 'var(--sunburst-residual-fill)'
+              : `var(--sunburst-depth-${fillLevel})`;
 
             return (
               <path
                 key={slice.path}
                 className={segmentClassName}
+                data-residual-kind={slice.residualKind}
                 d={arcGenerator(slice) ?? undefined}
                 style={{ fill }}
                 onPointerEnter={(event) => {
@@ -156,23 +175,33 @@ export function PortfolioSunburst({ root, title, hint }: PortfolioSunburstProps)
       </svg>
 
       {tooltipSlice === null ? <p className="sunburst-tooltip__hint">Hover auf ein Segment zeigt Label und Prozentwerte.</p> : null}
-      {slices.some((slice) => slice.isResidual) ? (
-        <p className="sunburst-chart__legend">
-          <span className="sunburst-chart__legend-mark" aria-hidden="true" />
-          Orange gestrichelt markiert fehlende Allokation im Parent.
-        </p>
+      {hasMissingAllocationResidual || hasDirectPositionResidual ? (
+        <div className="sunburst-chart__legend">
+          {hasMissingAllocationResidual ? (
+            <p className="sunburst-chart__legend-item">
+              <span className="sunburst-chart__legend-mark sunburst-chart__legend-mark--missing" aria-hidden="true" />
+              Orange gestrichelt markiert fehlende Allokation im Parent.
+            </p>
+          ) : null}
+          {hasDirectPositionResidual ? (
+            <p className="sunburst-chart__legend-item">
+              <span className="sunburst-chart__legend-mark sunburst-chart__legend-mark--direct" aria-hidden="true" />
+              Blau gestrichelt markiert Direktpositionen auf dem Parent.
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       {hoveredSlice !== null ? (
         <div className="sunburst-tooltip sunburst-tooltip--cursor" aria-live="polite" style={{ left: hoveredSlice.x, top: hoveredSlice.y }}>
           <p className="sunburst-tooltip__label">{tooltipSlice?.label}</p>
-          {tooltipSlice?.isResidual ? <p className="sunburst-tooltip__status">Dieser Anteil ist im Parent noch nicht allokiert.</p> : null}
+          {tooltipSlice?.isResidual ? <p className="sunburst-tooltip__status">{getResidualHint(tooltipSlice)}</p> : null}
           <div className="sunburst-tooltip__row">
             <span>Anteil gesamt</span>
             <strong>{formatPercentageValue(tooltipSlice?.pctTotal)}</strong>
           </div>
           <div className="sunburst-tooltip__row">
-            <span>{tooltipSlice?.isResidual ? 'Fehlt im Parent' : 'Anteil Parent'}</span>
+            <span>{tooltipSlice?.isResidual ? getResidualParentCaption(tooltipSlice) : 'Anteil Parent'}</span>
             <strong>{formatPercentageValue(tooltipSlice?.pctOfParent)}</strong>
           </div>
         </div>

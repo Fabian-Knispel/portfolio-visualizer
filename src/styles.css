@@ -26,6 +26,8 @@
   --sunburst-depth-5: #86efac;
   --sunburst-residual-fill: #f3552e62;
   --sunburst-residual-stroke: #f0860d;
+  --sunburst-direct-fill: #0f766e;
+  --sunburst-direct-stroke: #5eead4;
 
   color: var(--text);
   background: var(--bg-0);
@@ -378,6 +380,10 @@ button {
   stroke-dasharray: 5 4;
 }
 
+.sunburst-chart__segment--residual[data-residual-kind='direct_position'] {
+  stroke: var(--sunburst-direct-stroke);
+}
+
 .sunburst-chart__slice-label {
   fill: #f8fafc;
   font-size: 0.7rem;
@@ -398,12 +404,18 @@ button {
 }
 
 .sunburst-chart__legend {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.sunburst-chart__legend-item {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin: 0;
   color: var(--text-muted);
   font-size: 0.84rem;
+  margin: 0;
 }
 
 .sunburst-chart__legend-mark {
@@ -413,6 +425,16 @@ button {
   background: var(--sunburst-residual-fill);
   border: 2px dashed var(--sunburst-residual-stroke);
   flex: 0 0 auto;
+}
+
+.sunburst-chart__legend-mark--missing {
+  background: var(--sunburst-residual-fill);
+  border-color: var(--sunburst-residual-stroke);
+}
+
+.sunburst-chart__legend-mark--direct {
+  background: var(--sunburst-direct-fill);
+  border-color: var(--sunburst-direct-stroke);
 }
 
 .sunburst-tooltip {
