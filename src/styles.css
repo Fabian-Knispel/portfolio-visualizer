@@ -24,6 +24,10 @@
   --sunburst-depth-3: #16a34a;
   --sunburst-depth-4: #4ade80;
   --sunburst-depth-5: #86efac;
+  --sunburst-residual-fill: #f3552e62;
+  --sunburst-residual-stroke: #f0860d;
+  --sunburst-direct-fill: #0f766e;
+  --sunburst-direct-stroke: #5eead4;
 
   color: var(--text);
   background: var(--bg-0);
@@ -371,6 +375,68 @@ button {
   stroke-width: 2;
 }
 
+.sunburst-chart__segment--residual {
+  stroke: var(--sunburst-residual-stroke);
+  stroke-dasharray: 5 4;
+}
+
+.sunburst-chart__segment--residual[data-residual-kind='direct_position'] {
+  stroke: var(--sunburst-direct-stroke);
+}
+
+.sunburst-chart__slice-label {
+  fill: #f8fafc;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: rgba(15, 23, 42, 0.85);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.sunburst-chart__slice-label--residual {
+  fill: #fff7ed;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.sunburst-chart__legend {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.sunburst-chart__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  margin: 0;
+}
+
+.sunburst-chart__legend-mark {
+  width: 18px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--sunburst-residual-fill);
+  border: 2px dashed var(--sunburst-residual-stroke);
+  flex: 0 0 auto;
+}
+
+.sunburst-chart__legend-mark--missing {
+  background: var(--sunburst-residual-fill);
+  border-color: var(--sunburst-residual-stroke);
+}
+
+.sunburst-chart__legend-mark--direct {
+  background: var(--sunburst-direct-fill);
+  border-color: var(--sunburst-direct-stroke);
+}
+
 .sunburst-tooltip {
   border-radius: 12px;
   border: 1px solid var(--line);
@@ -386,7 +452,8 @@ button {
 }
 
 .sunburst-tooltip__hint,
-.sunburst-tooltip__label {
+.sunburst-tooltip__label,
+.sunburst-tooltip__status {
   margin: 0;
 }
 
@@ -397,6 +464,11 @@ button {
 .sunburst-tooltip__label {
   color: var(--text);
   font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.sunburst-tooltip__status {
+  color: #fcd34d;
   margin-bottom: 6px;
 }
 

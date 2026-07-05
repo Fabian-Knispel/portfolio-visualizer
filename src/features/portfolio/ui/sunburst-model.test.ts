@@ -71,12 +71,57 @@ describe('sunburst model', () => {
     expect(tagesgeld?.pctTotal).toBeCloseTo(0.08, 10);
   });
 
+  it('keeps parent slices at their own total even when children do not fill them completely', () => {
+    const sollRoot: SollNode = {
+      path: ROOT_NODE_PATH,
+      label: 'Portfolio',
+      targetPctOfParent: 100,
+      children: [
+        {
+          path: buildNodePath('Equity'),
+          label: 'Equity',
+          targetPctOfParent: 40,
+          children: [
+            {
+              path: buildNodePath('Equity', 'Core'),
+              label: 'Core',
+              targetPctOfParent: 25,
+              children: [],
+            },
+          ],
+        },
+        {
+          path: buildNodePath('Cash'),
+          label: 'Cash',
+          targetPctOfParent: 60,
+          children: [],
+        },
+      ],
+    };
+
+    const root = buildSollSunburstDatum(sollRoot);
+    const slices = buildSunburstSlices(root, 200);
+    const equity = slices.find((slice) => slice.path === buildNodePath('Equity'));
+    const core = slices.find((slice) => slice.path === buildNodePath('Equity', 'Core'));
+    const residual = slices.find((slice) => slice.path === `${buildNodePath('Equity')}/__unallocated__`);
+
+    expect(equity?.pctTotal).toBeCloseTo(0.4, 10);
+    expect(core?.pctTotal).toBeCloseTo(0.1, 10);
+    expect(core?.pctOfParent).toBeCloseTo(0.25, 10);
+    expect(residual).toMatchObject({
+      label: 'Fehlende Allokation',
+      isResidual: true,
+    });
+    expect(residual?.pctTotal).toBeCloseTo(0.3, 10);
+    expect(residual?.pctOfParent).toBeCloseTo(0.75, 10);
+  });
+
   it('selects the correct datum for the active sunburst mode', () => {
     const sollRoot = buildSunburstDatumForMode('soll', exampleSollHierarchy, null);
     const istRoot = buildSunburstDatumForMode('ist', null, computeIstPercentages(computeIstNodeValues(exampleIstHierarchy)));
 
     expect(sollRoot?.children[0].size).toBe(0);
-    expect(istRoot?.children[0].size).toBe(100);
+    expect(istRoot?.children[0].size).toBe(0);
   });
 
   it('builds a normalized IST tree for hierarchical rendering', () => {
@@ -86,10 +131,28 @@ describe('sunburst model', () => {
     expect(root?.size).toBe(0);
 
     const equity = root?.children[0];
+    const equityDirect = equity?.children.find((child) => child.path.endsWith('/__direct_position__'));
     const largeCap = equity?.children[0]?.children[0];
 
-    expect(equity?.size).toBe(100);
+    expect(equity?.size).toBe(0);
+    expect(equityDirect?.size).toBe(100);
     expect(largeCap?.size).toBe(200);
+  });
+
+  it('adds an IST direct-position residual slice for parent own values', () => {
+    const root = buildIstSunburstDatum(computeIstPercentages(computeIstNodeValues(exampleIstHierarchy)));
+    const slices = buildSunburstSlices(root, 200);
+    const equity = slices.find((slice) => slice.path === buildNodePath('Equity'));
+    const equityDirect = slices.find((slice) => slice.path === `${buildNodePath('Equity')}/__direct_position__`);
+
+    expect(equity?.pctTotal).toBeCloseTo(1000 / 1900, 10);
+    expect(equityDirect).toMatchObject({
+      label: 'Direktposition',
+      isResidual: true,
+      residualKind: 'direct_position',
+    });
+    expect(equityDirect?.pctTotal).toBeCloseTo(100 / 1900, 10);
+    expect(equityDirect?.pctOfParent).toBeCloseTo(0.1, 10);
   });
 
   it('computes sunburst slices with consistent percentages', () => {
