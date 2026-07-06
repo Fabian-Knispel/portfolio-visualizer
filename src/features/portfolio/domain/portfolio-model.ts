@@ -574,7 +574,6 @@ export function buildCompareRows(sollRoot: SollNode | null, istRoot: IstComputed
 export const exampleSollHierarchy: SollNode = {
   path: ROOT_NODE_PATH,
   label: 'Portfolio',
-  targetPctOfParent: HUNDRED,
   children: [
     {
       path: buildNodePath('Equity'),

@@ -38,6 +38,34 @@ function createEnvelope(sollRoot: SollNode): PortfolioStorageEnvelope {
 }
 
 describe('portfolio storage migration', () => {
+  it('removes legacy root targetPctOfParent while keeping child parent percentages', () => {
+    const storage = new CountingStorage();
+
+    storage.seed(
+      PORTFOLIO_STORAGE_KEY,
+      JSON.stringify(createEnvelope({
+        path: ROOT_NODE_PATH,
+        label: 'Portfolio',
+        targetPctOfParent: 100,
+        children: [
+          {
+            path: buildNodePath('Equity'),
+            label: 'Equity',
+            targetPctOfParent: 60,
+            children: [],
+          },
+        ],
+      }))
+    );
+
+    const loaded = loadPortfolioStorageState(storage);
+
+    expect(loaded.error).toBeNull();
+    expect(loaded.state.sollRoot?.targetPctOfParent).toBeUndefined();
+    expect(loaded.state.sollRoot?.children[0].targetPctOfParent).toBeCloseTo(60, 10);
+    expect(storage.writes).toBe(1);
+  });
+
   it('migrates legacy targetPct values once and persists targetPctOfParent', () => {
     const storage = new CountingStorage();
 

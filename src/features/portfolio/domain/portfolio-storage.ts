@@ -145,6 +145,11 @@ function migrateSollNode(node: SollNode, parentAbsoluteTargetPct?: number): Soll
   let nextTargetPctOfParent = targetPctOfParent;
   let migrated = false;
 
+  if (isRoot && targetPctOfParent !== undefined) {
+    nextTargetPctOfParent = undefined;
+    migrated = true;
+  }
+
   if (!isRoot && targetPctOfParent !== undefined && parentAbsolute !== undefined) {
     absoluteTargetPct = parentAbsolute * (targetPctOfParent / HUNDRED);
   }
@@ -158,11 +163,22 @@ function migrateSollNode(node: SollNode, parentAbsoluteTargetPct?: number): Soll
   const childrenMigrated = migratedChildren.some((result) => result.migrated);
 
   const nextNode: SollNode = migrated || childrenMigrated
-    ? {
-      ...node,
-      targetPctOfParent: nextTargetPctOfParent,
-      children: migratedChildren.map((result) => result.node),
-    }
+    ? (() => {
+      if (isRoot) {
+        const { targetPctOfParent: _unusedTargetPctOfParent, ...rootWithoutParentPct } = node;
+
+        return {
+          ...rootWithoutParentPct,
+          children: migratedChildren.map((result) => result.node),
+        };
+      }
+
+      return {
+        ...node,
+        targetPctOfParent: nextTargetPctOfParent,
+        children: migratedChildren.map((result) => result.node),
+      };
+    })()
     : node;
 
   return {

@@ -73,7 +73,6 @@ function createSollTree(): SollNode {
   return {
     path: ROOT_NODE_PATH,
     label: 'Portfolio',
-    targetPctOfParent: 100,
     children: [
       {
         path: buildNodePath('Equity'),

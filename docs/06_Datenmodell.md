@@ -40,6 +40,7 @@ export interface PortfolioNodeBase<TChild> {
 export interface SollNode extends PortfolioNodeBase<SollNode> {
   targetPct?: number;
   targetPctOfParent?: number;
+  lastEditedTargetField?: 'targetPct' | 'targetPctOfParent';
 }
 
 export interface IstNode extends PortfolioNodeBase<IstNode> {
@@ -61,6 +62,9 @@ export interface IstComputedNode extends PortfolioNodeBase<IstComputedNode> {
 - `targetPct?` und `ownValue?` sind absichtlich optional, damit unvollständige Eingaben importierbar bleiben.
 - `targetPctOfParent?` ist das primäre SOLL-Eingabefeld für Nicht-Root-Knoten.
 - `targetPct?` bleibt als rückwärtskompatibles, absolutes Fallback erhalten.
+- `lastEditedTargetField?` steuert, welches SOLL-Feld als Autoritaet fuer die Ableitung genutzt wird.
+- Der SOLL-Editor erlaubt die Eingabe je Nicht-Root-Knoten in zwei Modi: `% vom Parent` oder `% gesamt (absolut)`.
+- Der Root-Knoten speichert keinen `targetPctOfParent` und wird nur in der UI als fix `100 %` dargestellt.
 - `pctTotal` und `pctOfParent` sind berechnete Felder, keine Eingabefelder.
 - Prozentwerte werden intern mit voller Präzision berechnet und in der UI mit 2 Nachkommastellen angezeigt.
 - Für den Root-Knoten wird `pctOfParent` als `—` dargestellt.

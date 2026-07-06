@@ -23,7 +23,6 @@ describe('sunburst model', () => {
     const sollRoot: SollNode = {
       path: ROOT_NODE_PATH,
       label: 'Portfolio',
-      targetPctOfParent: 100,
       children: [
         {
           path: buildNodePath('Cash'),
@@ -75,7 +74,6 @@ describe('sunburst model', () => {
     const sollRoot: SollNode = {
       path: ROOT_NODE_PATH,
       label: 'Portfolio',
-      targetPctOfParent: 100,
       children: [
         {
           path: buildNodePath('Equity'),

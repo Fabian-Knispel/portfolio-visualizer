@@ -24,6 +24,7 @@ import { PortfolioSunburst } from './portfolio-sunburst';
 import { buildSunburstDatumForMode, type SunburstMode } from './sunburst-model';
 
 export type ViewMode = 'soll' | 'ist' | 'vergleich';
+type SollValueInputMode = 'parent' | 'absolute';
 
 interface PortfolioWorkspaceProps {
   activeViewMode: ViewMode;
@@ -277,6 +278,7 @@ export function PortfolioWorkspace({
     ist: ROOT_NODE_PATH,
     vergleich: ROOT_NODE_PATH,
   });
+  const [sollValueInputMode, setSollValueInputMode] = useState<SollValueInputMode>('parent');
   const [draft, setDraft] = useState<EditorDraft>({
     label: '',
     numericValue: '',
@@ -353,6 +355,16 @@ export function PortfolioWorkspace({
   }, [activeViewMode, currentRoot, selectedPath]);
 
   useEffect(() => {
+    if (activeViewMode !== 'soll' || selectedNode === null) {
+      return;
+    }
+
+    const selectedSollNode = selectedNode as SollNode;
+
+    setSollValueInputMode(selectedSollNode.lastEditedTargetField === 'targetPct' ? 'absolute' : 'parent');
+  }, [activeViewMode, selectedNode]);
+
+  useEffect(() => {
     if (selectedNode === null) {
       setDraft({
         label: '',
@@ -368,7 +380,11 @@ export function PortfolioWorkspace({
       label: selectedNode.label,
       numericValue:
         activeViewMode === 'soll'
-          ? formatNumber((findNodeByPath(sollComputedRoot, selectedNode.path)?.targetPctOfParent))
+          ? formatNumber(
+            sollValueInputMode === 'absolute'
+              ? findNodeByPath(sollComputedRoot, selectedNode.path)?.targetPct
+              : findNodeByPath(sollComputedRoot, selectedNode.path)?.targetPctOfParent
+          )
           : activeViewMode === 'ist'
             ? formatNumber((selectedNode as IstNode).ownValue)
             : '',
@@ -376,7 +392,7 @@ export function PortfolioWorkspace({
       childLabel: '',
       childNumericValue: '',
     });
-  }, [activeViewMode, parentPath, selectedNode, sollComputedRoot]);
+  }, [activeViewMode, parentPath, selectedNode, sollComputedRoot, sollValueInputMode]);
 
   useEffect(() => {
     setDraft((previous) => ({
@@ -568,8 +584,21 @@ export function PortfolioWorkspace({
       nextSnapshot = portfolioStore.updateSollNode(selectedNode.path, (node) => ({
         ...node,
         label: nextLabel,
-        targetPctOfParent: isRoot ? 100 : editValueValidation.parsedValue,
-        targetPct: isRoot ? node.targetPct : undefined,
+        targetPctOfParent: isRoot
+          ? undefined
+          : sollValueInputMode === 'parent'
+            ? editValueValidation.parsedValue
+            : node.targetPctOfParent,
+        targetPct: isRoot
+          ? node.targetPct
+          : sollValueInputMode === 'absolute'
+            ? editValueValidation.parsedValue
+            : node.targetPct,
+        lastEditedTargetField: isRoot
+          ? node.lastEditedTargetField
+          : sollValueInputMode === 'absolute'
+            ? 'targetPct'
+            : 'targetPctOfParent',
       }));
     } else {
       nextSnapshot = portfolioStore.updateIstNode(selectedNode.path, (node) => ({
@@ -604,10 +633,20 @@ export function PortfolioWorkspace({
     let nextSnapshot: PortfolioStoreSnapshot;
 
     if (activeViewMode === 'soll') {
+      const parentAbsoluteTargetPct = selectedSollComputedNode?.targetPct;
+      const childTargetPctOfParent =
+        sollValueInputMode === 'absolute'
+          ? parentAbsoluteTargetPct === undefined || parentAbsoluteTargetPct === 0
+            ? undefined
+            : ((childValueValidation.parsedValue ?? 0) / parentAbsoluteTargetPct) * 100
+          : childValueValidation.parsedValue;
+
       nextSnapshot = portfolioStore.appendSollNode(selectedNode.path, {
         path: childPath,
         label: childLabel,
-        targetPctOfParent: childValueValidation.parsedValue,
+        targetPctOfParent: childTargetPctOfParent,
+        targetPct: sollValueInputMode === 'absolute' ? childValueValidation.parsedValue : undefined,
+        lastEditedTargetField: sollValueInputMode === 'absolute' ? 'targetPct' : 'targetPctOfParent',
         children: [],
       });
     } else {
@@ -651,17 +690,30 @@ export function PortfolioWorkspace({
   const readOnlyMode = activeViewMode === 'vergleich';
   const isIstMode = activeViewMode === 'ist';
   const isSollMode = activeViewMode === 'soll';
+  const isSollAbsoluteMode = isSollMode && sollValueInputMode === 'absolute';
   const isRootSollSelection = isSollMode && selectedNode !== null && isRootNodePath(selectedNode.path);
   const editValueValidation =
     isSollMode || isIstMode
-      ? validateNumericInput(draft.numericValue, isSollMode ? 'soll' : 'ist', isSollMode ? 'Anteil am Parent' : 'IST-Wert')
+      ? validateNumericInput(
+        draft.numericValue,
+        isSollMode ? 'soll' : 'ist',
+        isSollMode
+          ? isSollAbsoluteMode
+            ? 'Anteil gesamt'
+            : 'Anteil am Parent'
+          : 'IST-Wert'
+      )
       : { parsedValue: undefined, error: null };
   const childValueValidation =
     isSollMode || isIstMode
       ? validateNumericInput(
         draft.childNumericValue,
         isSollMode ? 'soll' : 'ist',
-        isSollMode ? 'Neuer Anteil am Parent' : 'Neuer IST-Wert'
+        isSollMode
+          ? isSollAbsoluteMode
+            ? 'Neuer Anteil gesamt'
+            : 'Neuer Anteil am Parent'
+          : 'Neuer IST-Wert'
       )
       : { parsedValue: undefined, error: null };
   const saveSucceeded = savedAt !== null && snapshot.saveError === null;
@@ -860,7 +912,27 @@ export function PortfolioWorkspace({
                 </label>
 
                 <label className="field">
-                  <span>{isSollMode ? 'Anteil am Parent in %' : isIstMode ? 'IST-Wert' : 'Wert'}</span>
+                  <span>{isSollMode ? 'Eingabemodus' : 'Modus'}</span>
+                  <select
+                    disabled={readOnlyMode || !isSollMode || isRootSollSelection}
+                    value={sollValueInputMode}
+                    onChange={(event) => setSollValueInputMode(event.target.value as SollValueInputMode)}
+                  >
+                    <option value="parent">% vom Parent</option>
+                    <option value="absolute">% gesamt (absolut)</option>
+                  </select>
+                </label>
+
+                <label className="field">
+                  <span>
+                    {isSollMode
+                      ? isSollAbsoluteMode
+                        ? 'Anteil gesamt in %'
+                        : 'Anteil am Parent in %'
+                      : isIstMode
+                        ? 'IST-Wert'
+                        : 'Wert'}
+                  </span>
                   <input
                     className={editValueValidation.error !== null ? 'field__input--error' : undefined}
                     disabled={readOnlyMode || isRootSollSelection}
@@ -870,7 +942,15 @@ export function PortfolioWorkspace({
                     aria-describedby={editValueValidation.error !== null ? 'edit-numeric-error' : undefined}
                     onChange={(event) => setDraft((previous) => ({ ...previous, numericValue: event.target.value }))}
                     onKeyDown={(event) => { if (event.key === 'Enter') handleSave(); }}
-                    placeholder={isSollMode ? (isRootSollSelection ? 'Root = 100 % (fix)' : 'z. B. 25') : 'z. B. 1000'}
+                    placeholder={
+                      isSollMode
+                        ? isRootSollSelection
+                          ? 'Root = 100 % (fix)'
+                          : isSollAbsoluteMode
+                            ? 'z. B. 20'
+                            : 'z. B. 40'
+                        : 'z. B. 1000'
+                    }
                   />
                 </label>
                 {editValueValidation.error !== null ? <p className="field__error" id="edit-numeric-error" role="alert">{editValueValidation.error}</p> : null}
@@ -935,7 +1015,15 @@ export function PortfolioWorkspace({
                 </label>
 
                 <label className="field">
-                  <span>{isSollMode ? 'Neuer Anteil am Parent in %' : isIstMode ? 'Neuer IST-Wert' : 'Wert'}</span>
+                  <span>
+                    {isSollMode
+                      ? isSollAbsoluteMode
+                        ? 'Neuer Anteil gesamt in %'
+                        : 'Neuer Anteil am Parent in %'
+                      : isIstMode
+                        ? 'Neuer IST-Wert'
+                        : 'Wert'}
+                  </span>
                   <input
                     className={childValueValidation.error !== null ? 'field__input--error' : undefined}
                     disabled={readOnlyMode}
@@ -945,7 +1033,7 @@ export function PortfolioWorkspace({
                     aria-describedby={childValueValidation.error !== null ? 'child-numeric-error' : undefined}
                     onChange={(event) => setDraft((previous) => ({ ...previous, childNumericValue: event.target.value }))}
                     onKeyDown={(event) => { if (event.key === 'Enter') handleAddChild(); }}
-                    placeholder={isSollMode ? 'z. B. 40' : 'z. B. 250'}
+                    placeholder={isSollMode ? (isSollAbsoluteMode ? 'z. B. 12' : 'z. B. 40') : 'z. B. 250'}
                   />
                 </label>
                 {childValueValidation.error !== null ? <p className="field__error" id="child-numeric-error" role="alert">{childValueValidation.error}</p> : null}
