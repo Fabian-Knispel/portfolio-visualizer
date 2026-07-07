@@ -52,6 +52,14 @@ function getResidualParentCaption(slice: SunburstSlice): string {
   return slice.residualKind === 'direct_position' ? 'Direkt am Parent' : 'Fehlt im Parent';
 }
 
+function getOverallocationHint(slice: SunburstSlice): string {
+  if (slice.overallocationSum === undefined) {
+    return 'Der Elternknoten ist überallokiert.';
+  }
+
+  return `Der Elternknoten ist überallokiert – Kinder summieren sich auf ${formatPercentageValue(slice.overallocationSum)}.`;
+}
+
 export function PortfolioSunburst({ root, title, hint }: PortfolioSunburstProps) {
   const chartRef = useRef<HTMLDivElement | null>(null);
   const [hoveredSlice, setHoveredSlice] = useState<TooltipState | null>(null);
@@ -93,6 +101,8 @@ export function PortfolioSunburst({ root, title, hint }: PortfolioSunburstProps)
   const labeledSlices = slices.filter(canRenderSliceLabel);
   const hasMissingAllocationResidual = slices.some((slice) => slice.isResidual && slice.residualKind === 'missing_allocation');
   const hasDirectPositionResidual = slices.some((slice) => slice.isResidual && slice.residualKind === 'direct_position');
+  const hasOverallocatedSlice = slices.some((slice) => slice.isOverallocated);
+  const isRootOverallocated = (root?.childrenSumPctOfParent ?? 0) > 1 + 1e-9;
 
   if (root === null || slices.length === 0) {
     return (
@@ -125,6 +135,7 @@ export function PortfolioSunburst({ root, title, hint }: PortfolioSunburstProps)
             const segmentClassName = [
               'sunburst-chart__segment',
               slice.isResidual ? 'sunburst-chart__segment--residual' : '',
+              slice.isOverallocated ? 'sunburst-chart__segment--overallocated' : '',
               isActive ? 'sunburst-chart__segment--active' : '',
             ].filter(Boolean).join(' ');
             const fill = slice.isResidual
@@ -175,8 +186,14 @@ export function PortfolioSunburst({ root, title, hint }: PortfolioSunburstProps)
       </svg>
 
       {tooltipSlice === null ? <p className="sunburst-tooltip__hint">Hover auf ein Segment zeigt Label und Prozentwerte.</p> : null}
-      {hasMissingAllocationResidual || hasDirectPositionResidual ? (
+      {hasMissingAllocationResidual || hasDirectPositionResidual || hasOverallocatedSlice || isRootOverallocated ? (
         <div className="sunburst-chart__legend">
+          {hasOverallocatedSlice ? (
+            <p className="sunburst-chart__legend-item">
+              <span className="sunburst-chart__legend-mark sunburst-chart__legend-mark--overallocated" aria-hidden="true" />
+              Rot markiert Kinder überallokierter Elternknoten.
+            </p>
+          ) : null}
           {hasMissingAllocationResidual ? (
             <p className="sunburst-chart__legend-item">
               <span className="sunburst-chart__legend-mark sunburst-chart__legend-mark--missing" aria-hidden="true" />
@@ -189,6 +206,11 @@ export function PortfolioSunburst({ root, title, hint }: PortfolioSunburstProps)
               Blau gestrichelt markiert Direktpositionen auf dem Parent.
             </p>
           ) : null}
+          {isRootOverallocated ? (
+            <p className="sunburst-chart__legend-item">
+              Root ist überallokiert: Kinder summieren sich auf {formatPercentageValue(root.childrenSumPctOfParent)}.
+            </p>
+          ) : null}
         </div>
       ) : null}
 
@@ -196,6 +218,7 @@ export function PortfolioSunburst({ root, title, hint }: PortfolioSunburstProps)
         <div className="sunburst-tooltip sunburst-tooltip--cursor" aria-live="polite" style={{ left: hoveredSlice.x, top: hoveredSlice.y }}>
           <p className="sunburst-tooltip__label">{tooltipSlice?.label}</p>
           {tooltipSlice?.isResidual ? <p className="sunburst-tooltip__status">{getResidualHint(tooltipSlice)}</p> : null}
+          {tooltipSlice?.isOverallocated ? <p className="sunburst-tooltip__status">{getOverallocationHint(tooltipSlice)}</p> : null}
           <div className="sunburst-tooltip__row">
             <span>Anteil gesamt</span>
             <strong>{formatPercentageValue(tooltipSlice?.pctTotal)}</strong>

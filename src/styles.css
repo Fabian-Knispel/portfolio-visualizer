@@ -28,6 +28,8 @@
   --sunburst-residual-stroke: #f0860d;
   --sunburst-direct-fill: #0f766e;
   --sunburst-direct-stroke: #5eead4;
+  --sunburst-overallocated-fill: #7f1d1d52;
+  --sunburst-overallocated-stroke: #ef4444;
 
   color: var(--text);
   background: var(--bg-0);
@@ -384,6 +386,11 @@ button {
   stroke: var(--sunburst-direct-stroke);
 }
 
+.sunburst-chart__segment--overallocated {
+  stroke: var(--sunburst-overallocated-stroke);
+  stroke-width: 3;
+}
+
 .sunburst-chart__slice-label {
   fill: #f8fafc;
   font-size: 0.7rem;
@@ -435,6 +442,11 @@ button {
 .sunburst-chart__legend-mark--direct {
   background: var(--sunburst-direct-fill);
   border-color: var(--sunburst-direct-stroke);
+}
+
+.sunburst-chart__legend-mark--overallocated {
+  background: var(--sunburst-overallocated-fill);
+  border-color: var(--sunburst-overallocated-stroke);
 }
 
 .sunburst-tooltip {

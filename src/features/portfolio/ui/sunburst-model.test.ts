@@ -139,10 +139,61 @@ describe('sunburst model', () => {
     const equity = slices.find((slice) => slice.path === buildNodePath('Equity'));
     const bonds = slices.find((slice) => slice.path === buildNodePath('Bonds'));
 
+    expect(root?.childrenSumPctOfParent).toBeCloseTo(1.1, 10);
+    expect(equity?.isOverallocated).toBe(true);
+    expect(equity?.overallocationSum).toBeCloseTo(1.1, 10);
+    expect(bonds?.isOverallocated).toBe(true);
     expect(equity?.pctTotal).toBeCloseTo(0.7, 10);
     expect(equity?.pctOfParent).toBeCloseTo(0.7, 10);
     expect(bonds?.pctTotal).toBeCloseTo(0.4, 10);
     expect(bonds?.pctOfParent).toBeCloseTo(0.4, 10);
+  });
+
+  it('marks children of overallocated parents in SOLL sunburst', () => {
+    const sollRoot: SollNode = {
+      path: ROOT_NODE_PATH,
+      label: 'Portfolio',
+      children: [
+        {
+          path: buildNodePath('Equity'),
+          label: 'Equity',
+          targetPctOfParent: 40,
+          children: [
+            {
+              path: buildNodePath('Equity', 'USA'),
+              label: 'USA',
+              targetPctOfParent: 70,
+              children: [],
+            },
+            {
+              path: buildNodePath('Equity', 'Europe'),
+              label: 'Europe',
+              targetPctOfParent: 60,
+              children: [],
+            },
+          ],
+        },
+        {
+          path: buildNodePath('Bonds'),
+          label: 'Bonds',
+          targetPctOfParent: 60,
+          children: [],
+        },
+      ],
+    };
+
+    const root = buildSollSunburstDatum(sollRoot);
+    const slices = buildSunburstSlices(root, 200);
+    const equity = slices.find((slice) => slice.path === buildNodePath('Equity'));
+
+    const usa = slices.find((slice) => slice.path === buildNodePath('Equity', 'USA'));
+    const europe = slices.find((slice) => slice.path === buildNodePath('Equity', 'Europe'));
+
+    expect(equity?.isOverallocated).toBe(false);
+    expect(equity?.childrenSumPctOfParent).toBeCloseTo(1.3, 10);
+    expect(usa?.isOverallocated).toBe(true);
+    expect(europe?.isOverallocated).toBe(true);
+    expect(usa?.overallocationSum).toBeCloseTo(1.3, 10);
   });
 
   it('selects the correct datum for the active sunburst mode', () => {

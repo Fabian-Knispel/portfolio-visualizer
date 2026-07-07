@@ -13,6 +13,9 @@ export interface SunburstNodeDatum {
   children: SunburstNodeDatum[];
   pctTotalOverride?: number;
   pctOfParentOverride?: number;
+  isOverallocated?: boolean;        // true when this node is a child of an overallocated parent
+  overallocationSum?: number;       // the parent's childrenSumPctOfParent ratio, for tooltip
+  childrenSumPctOfParent?: number;  // set on parent nodes; ratio children-size / own-size
   isResidual?: boolean;
   residualKind?: 'missing_allocation' | 'direct_position';
 }
@@ -24,6 +27,9 @@ export interface SunburstSlice {
   value: number;
   pctTotal: number;
   pctOfParent?: number;
+  isOverallocated: boolean;      // true on children of an overallocated parent
+  overallocationSum?: number;   // the parent's childrenSumPctOfParent, for tooltip
+  childrenSumPctOfParent?: number;
   isResidual: boolean;
   residualKind?: 'missing_allocation' | 'direct_position';
   startAngle: number;
@@ -32,6 +38,8 @@ export interface SunburstSlice {
   outerRadius: number;
   branchPath: string;
 }
+
+const EPSILON = 1e-9;
 
 function normalizeSize(value: number | undefined): number {
   return Number.isFinite(value ?? Number.NaN) && (value ?? 0) > 0 ? (value as number) : 0;
@@ -60,10 +68,24 @@ export function buildSollSunburstDatum(root: SollNode | null): SunburstNodeDatum
     const children = node.children.map(transformNode);
     const nodeSize = normalizeSize(node.pctTotal * 100);
     const childrenSize = node.children.reduce((sum, child) => sum + normalizeSize(child.pctTotal * 100), 0);
+    const childrenSumPctOfParent =
+      node.children.length === 0 || nodeSize === 0 ? undefined : childrenSize / nodeSize;
+    const isParentOverallocated =
+      node.children.length > 0
+      && childrenSumPctOfParent !== undefined
+      && childrenSumPctOfParent > 1 + EPSILON;
     const residualSize = normalizeSize(nodeSize - childrenSize);
 
-    if (node.children.length > 0 && residualSize > 0) {
-      children.push({
+    // Mark the children (not the parent) to show which nodes contribute to over-allocation.
+    const annotatedChildren: SunburstNodeDatum[] = isParentOverallocated
+      ? children.map((child) =>
+          child.isResidual ? child : { ...child, isOverallocated: true, overallocationSum: childrenSumPctOfParent }
+        )
+      : [...children];
+
+    // Residual only makes sense when children leave capacity unused (not when they exceed it).
+    if (!isParentOverallocated && node.children.length > 0 && residualSize > 0) {
+      annotatedChildren.push({
         path: `${node.path}/__unallocated__`,
         label: 'Fehlende Allokation',
         size: residualSize,
@@ -81,7 +103,8 @@ export function buildSollSunburstDatum(root: SollNode | null): SunburstNodeDatum
       size: node.children.length === 0 ? nodeSize : 0,
       pctTotalOverride: node.pctTotal,
       pctOfParentOverride: node.pctOfParent,
-      children,
+      childrenSumPctOfParent,
+      children: annotatedChildren,
     };
   }
 
@@ -151,6 +174,9 @@ export function buildSunburstSlices(root: SunburstNodeDatum | null, radius: numb
         pctOfParent:
           node.data.pctOfParentOverride
           ?? (node.parent === null || parentValue === 0 ? undefined : value / parentValue),
+        isOverallocated: node.data.isOverallocated === true,
+        overallocationSum: node.data.overallocationSum,
+        childrenSumPctOfParent: node.data.childrenSumPctOfParent,
         isResidual: node.data.isResidual === true,
         residualKind: node.data.residualKind,
         startAngle: node.x0,
