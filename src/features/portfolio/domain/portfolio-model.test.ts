@@ -307,13 +307,23 @@ describe('tree operations', () => {
     const root = createSollTree();
 
     const moved = moveNodeInTree(root, buildNodePath('Equity', 'USA'), ROOT_NODE_PATH);
-    expect(findNodeByPath(moved, buildNodePath('Equity', 'USA'))).not.toBeNull();
+    expect(findNodeByPath(moved, buildNodePath('USA'))).not.toBeNull();
+    expect(findNodeByPath(moved, buildNodePath('Equity', 'USA'))).toBeNull();
     expect(findNodeByPath(moved, buildNodePath('Equity'))?.children).toHaveLength(0);
 
     expect(moveNodeInTree(root, ROOT_NODE_PATH, buildNodePath('Cash'))).toBe(root);
     expect(moveNodeInTree(root, buildNodePath('Equity'), buildNodePath('Equity', 'USA'))).toBe(root);
     expect(moveNodeInTree(root, buildNodePath('Missing'), ROOT_NODE_PATH)).toBe(root);
     expect(moveNodeInTree(root, buildNodePath('Cash'), buildNodePath('Missing'))).toBe(root);
+  });
+
+  it('rebases paths for moved IST subtrees so parent derivation remains correct', () => {
+    const istRoot = createStandardIstTree();
+
+    const moved = moveNodeInTree(istRoot, 'root/ETF/Developed', ROOT_NODE_PATH);
+
+    expect(findNodeByPath(moved, buildNodePath('Developed'))).not.toBeNull();
+    expect(findNodeByPath(moved, 'root/ETF/Developed')).toBeNull();
   });
 });
 

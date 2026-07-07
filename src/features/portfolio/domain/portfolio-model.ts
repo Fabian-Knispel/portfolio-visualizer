@@ -223,6 +223,33 @@ function isPathInsideSubtree(rootPath: NodePath, candidatePath: NodePath): boole
   return candidatePath === rootPath || candidatePath.startsWith(`${rootPath}/`);
 }
 
+function getPathTail(path: NodePath): string {
+  const segments = path.split('/');
+  return segments[segments.length - 1] ?? path;
+}
+
+function buildMovedNodePath(newParentPath: NodePath, oldNodePath: NodePath): NodePath {
+  const nodeTail = getPathTail(oldNodePath);
+
+  return isRootNodePath(newParentPath) ? buildNodePath(nodeTail) : `${newParentPath}/${nodeTail}`;
+}
+
+function rebaseSubtreePaths<TNode extends PortfolioNodeBase<TNode>>(
+  node: TNode,
+  oldRootPath: NodePath,
+  newRootPath: NodePath
+): TNode {
+  const rebasedPath = node.path === oldRootPath
+    ? newRootPath
+    : `${newRootPath}${node.path.slice(oldRootPath.length)}`;
+
+  return {
+    ...node,
+    path: rebasedPath,
+    children: node.children.map((child) => rebaseSubtreePaths(child, oldRootPath, newRootPath)),
+  };
+}
+
 function collectNodePaths<TNode extends PortfolioNodeBase<TNode>>(node: TNode): Set<NodePath> {
   const paths = new Set<NodePath>();
 
@@ -414,9 +441,16 @@ export function moveNodeInTree<TNode extends PortfolioNodeBase<TNode>>(
     return root;
   }
 
+  const movedNodePath = buildMovedNodePath(newParentPath, nodeToMove.path);
+  const rebasedNodeToMove = rebaseSubtreePaths(nodeToMove, nodeToMove.path, movedNodePath);
+
   const treeWithoutNode = removeNodeFromTree(root, path);
 
-  return appendNodeToTree(treeWithoutNode, newParentPath, nodeToMove);
+  if (findNodeInTree(treeWithoutNode, rebasedNodeToMove.path) !== null) {
+    return root;
+  }
+
+  return appendNodeToTree(treeWithoutNode, newParentPath, rebasedNodeToMove);
 }
 
 export function computeIstNodeValues(root: IstNode): IstComputedNode {
