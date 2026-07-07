@@ -138,6 +138,17 @@ function buildChildPath(parentPath: NodePath, childLabel: string): NodePath {
   return `${parentPath}/${tail}`;
 }
 
+function getPathTail(path: NodePath): string {
+  const segments = path.split('/');
+  return segments[segments.length - 1] ?? path;
+}
+
+function buildMovedNodePath(newParentPath: NodePath, oldNodePath: NodePath): NodePath {
+  const nodeTail = getPathTail(oldNodePath);
+
+  return isRootNodePath(newParentPath) ? buildNodePath(nodeTail) : `${newParentPath}/${nodeTail}`;
+}
+
 function createUniqueChildPath(parentPath: NodePath, childLabel: string, siblingPaths: string[]): NodePath {
   const baseLabel = childLabel.trim().length > 0 ? childLabel.trim() : 'Neuer Knoten';
   let candidateLabel = baseLabel;
@@ -569,19 +580,29 @@ export function PortfolioWorkspace({
 
     const nextLabel = draft.label.trim().length > 0 ? draft.label.trim() : selectedNode.label;
     let nextSnapshot: PortfolioStoreSnapshot = snapshot;
+    let nextPath = selectedNode.path;
 
     if (draft.parentPath !== parentPath && !isRootNodePath(selectedNode.path)) {
+      const movedNodePath = buildMovedNodePath(draft.parentPath, selectedNode.path);
+
       if (activeViewMode === 'soll') {
         nextSnapshot = portfolioStore.moveSollNode(selectedNode.path, draft.parentPath);
       } else {
         nextSnapshot = portfolioStore.moveIstNode(selectedNode.path, draft.parentPath);
       }
+
+      const movedExists = findNodeByPath(
+        activeViewMode === 'soll' ? nextSnapshot.sollRoot : nextSnapshot.istRoot,
+        movedNodePath
+      ) !== null;
+
+      nextPath = movedExists ? movedNodePath : selectedNode.path;
     }
 
     if (activeViewMode === 'soll') {
-      const isRoot = isRootNodePath(selectedNode.path);
+      const isRoot = isRootNodePath(nextPath);
 
-      nextSnapshot = portfolioStore.updateSollNode(selectedNode.path, (node) => ({
+      nextSnapshot = portfolioStore.updateSollNode(nextPath, (node) => ({
         ...node,
         label: nextLabel,
         targetPctOfParent: isRoot
@@ -601,12 +622,14 @@ export function PortfolioWorkspace({
             : 'targetPctOfParent',
       }));
     } else {
-      nextSnapshot = portfolioStore.updateIstNode(selectedNode.path, (node) => ({
+      nextSnapshot = portfolioStore.updateIstNode(nextPath, (node) => ({
         ...node,
         label: nextLabel,
         ownValue: editValueValidation.parsedValue,
       }));
     }
+
+    updateSelectedPath(nextPath);
 
     if (nextSnapshot.saveError === null) {
       setSavedAt(Date.now());
