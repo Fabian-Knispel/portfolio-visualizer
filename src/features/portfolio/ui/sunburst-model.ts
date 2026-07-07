@@ -11,6 +11,8 @@ export interface SunburstNodeDatum {
   label: string;
   size: number;
   children: SunburstNodeDatum[];
+  pctTotalOverride?: number;
+  pctOfParentOverride?: number;
   isResidual?: boolean;
   residualKind?: 'missing_allocation' | 'direct_position';
 }
@@ -65,6 +67,8 @@ export function buildSollSunburstDatum(root: SollNode | null): SunburstNodeDatum
         path: `${node.path}/__unallocated__`,
         label: 'Fehlende Allokation',
         size: residualSize,
+        pctTotalOverride: residualSize / 100,
+        pctOfParentOverride: nodeSize === 0 ? undefined : residualSize / nodeSize,
         children: [],
         isResidual: true,
         residualKind: 'missing_allocation',
@@ -75,6 +79,8 @@ export function buildSollSunburstDatum(root: SollNode | null): SunburstNodeDatum
       path: node.path,
       label: node.label,
       size: node.children.length === 0 ? nodeSize : 0,
+      pctTotalOverride: node.pctTotal,
+      pctOfParentOverride: node.pctOfParent,
       children,
     };
   }
@@ -141,8 +147,10 @@ export function buildSunburstSlices(root: SunburstNodeDatum | null, radius: numb
         label: node.data.label,
         depth: node.depth,
         value,
-        pctTotal: totalValue === 0 ? 0 : value / totalValue,
-        pctOfParent: node.parent === null || parentValue === 0 ? undefined : value / parentValue,
+        pctTotal: node.data.pctTotalOverride ?? (totalValue === 0 ? 0 : value / totalValue),
+        pctOfParent:
+          node.data.pctOfParentOverride
+          ?? (node.parent === null || parentValue === 0 ? undefined : value / parentValue),
         isResidual: node.data.isResidual === true,
         residualKind: node.data.residualKind,
         startAngle: node.x0,

@@ -114,6 +114,37 @@ describe('sunburst model', () => {
     expect(residual?.pctOfParent).toBeCloseTo(0.75, 10);
   });
 
+  it('keeps SOLL percentages aligned with configured values when root children overallocate', () => {
+    const sollRoot: SollNode = {
+      path: ROOT_NODE_PATH,
+      label: 'Portfolio',
+      children: [
+        {
+          path: buildNodePath('Equity'),
+          label: 'Equity',
+          targetPctOfParent: 70,
+          children: [],
+        },
+        {
+          path: buildNodePath('Bonds'),
+          label: 'Bonds',
+          targetPctOfParent: 40,
+          children: [],
+        },
+      ],
+    };
+
+    const root = buildSollSunburstDatum(sollRoot);
+    const slices = buildSunburstSlices(root, 200);
+    const equity = slices.find((slice) => slice.path === buildNodePath('Equity'));
+    const bonds = slices.find((slice) => slice.path === buildNodePath('Bonds'));
+
+    expect(equity?.pctTotal).toBeCloseTo(0.7, 10);
+    expect(equity?.pctOfParent).toBeCloseTo(0.7, 10);
+    expect(bonds?.pctTotal).toBeCloseTo(0.4, 10);
+    expect(bonds?.pctOfParent).toBeCloseTo(0.4, 10);
+  });
+
   it('selects the correct datum for the active sunburst mode', () => {
     const sollRoot = buildSunburstDatumForMode('soll', exampleSollHierarchy, null);
     const istRoot = buildSunburstDatumForMode('ist', null, computeIstPercentages(computeIstNodeValues(exampleIstHierarchy)));

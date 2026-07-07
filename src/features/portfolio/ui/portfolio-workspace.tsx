@@ -470,8 +470,8 @@ export function PortfolioWorkspace({
 
         return {
           status: freeness?.status,
-          primaryValue: formatStoredPercent(freeness?.childrenTargetSumPct),
-          secondaryValue: formatStoredPercent(100),
+          primaryValue: formatStoredPercent(computedSollNode?.targetPctOfParent),
+          secondaryValue: formatRatioPercent(computedSollNode?.pctTotal),
           direction: freeness?.status === 'overallocated' ? 'up' : freeness?.status === 'free' ? 'down' : 'flat',
           showBadge: freeness?.status === 'correct',
         };
