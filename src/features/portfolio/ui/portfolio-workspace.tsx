@@ -724,7 +724,7 @@ export function PortfolioWorkspace({
           ? isSollAbsoluteMode
             ? 'Anteil gesamt'
             : 'Anteil am Parent'
-          : 'IST-Wert'
+          : 'IST-Gesamtwert'
       )
       : { parsedValue: undefined, error: null };
   const childValueValidation =
@@ -736,7 +736,7 @@ export function PortfolioWorkspace({
           ? isSollAbsoluteMode
             ? 'Neuer Anteil gesamt'
             : 'Neuer Anteil am Parent'
-          : 'Neuer IST-Wert'
+          : 'Neuer IST-Gesamtwert'
       )
       : { parsedValue: undefined, error: null };
   const saveSucceeded = savedAt !== null && snapshot.saveError === null;
@@ -871,8 +871,12 @@ export function PortfolioWorkspace({
                 {isIstMode && selectedIstComputedNode !== null ? (
                   <>
                     <div className="detail-card__row">
-                      <span>Node Value</span>
+                      <span>Gesamtwert (berechnet)</span>
                       <strong>{selectedIstComputedNode.nodeValue}</strong>
+                    </div>
+                    <div className="detail-card__row">
+                      <span>Direkt gehalten (abgeleitet)</span>
+                      <strong>{selectedIstComputedNode.directValue}</strong>
                     </div>
                     <div className="detail-card__row">
                       <span>Anteil gesamt</span>
@@ -953,7 +957,7 @@ export function PortfolioWorkspace({
                         ? 'Anteil gesamt in %'
                         : 'Anteil am Parent in %'
                       : isIstMode
-                        ? 'IST-Wert'
+                        ? 'IST-Gesamtwert'
                         : 'Wert'}
                   </span>
                   <input
@@ -972,7 +976,7 @@ export function PortfolioWorkspace({
                           : isSollAbsoluteMode
                             ? 'z. B. 20'
                             : 'z. B. 40'
-                        : 'z. B. 1000'
+                        : 'z. B. 1000 (inkl. Kinder)'
                     }
                   />
                 </label>

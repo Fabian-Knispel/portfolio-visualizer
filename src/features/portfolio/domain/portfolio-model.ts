@@ -22,6 +22,7 @@ export interface IstNode extends PortfolioNodeBase<IstNode> {
 
 export interface IstComputedNode extends PortfolioNodeBase<IstComputedNode> {
   ownValue?: number;
+  directValue: number;
   nodeValue: number;
   pctTotal: number;
   pctOfParent?: number;
@@ -166,12 +167,15 @@ export function formatPercentageValue(value: number | undefined, digits: number 
 function computeIstNodeValuesInternal(node: IstNode): IstComputedNode {
   const computedChildren = node.children.map(computeIstNodeValuesInternal);
   const childrenNodeValue = computedChildren.reduce((sum, child) => sum + child.nodeValue, ZERO);
-  const nodeValue = normalizeNumber(node.ownValue) + childrenNodeValue;
+  const parentInputValue = normalizeNumber(node.ownValue);
+  const directValue = Math.max(parentInputValue - childrenNodeValue, ZERO);
+  const nodeValue = childrenNodeValue + directValue;
 
   return {
     ...node,
     children: computedChildren,
     ownValue: node.ownValue,
+    directValue,
     nodeValue,
     pctTotal: ZERO,
     pctOfParent: undefined,
@@ -702,12 +706,12 @@ export const exampleIstHierarchy: IstNode = {
     {
       path: buildNodePath('Equity'),
       label: 'Equity',
-      ownValue: 100,
+      ownValue: 1000,
       children: [
         {
           path: buildNodePath('Equity', 'USA'),
           label: 'USA',
-          ownValue: 300,
+          ownValue: 600,
           children: [
             {
               path: buildNodePath('Equity', 'USA', 'Large Cap'),
@@ -726,7 +730,7 @@ export const exampleIstHierarchy: IstNode = {
         {
           path: buildNodePath('Equity', 'Europe'),
           label: 'Europe',
-          ownValue: 200,
+          ownValue: 300,
           children: [
             {
               path: buildNodePath('Equity', 'Europe', 'Core'),
@@ -741,12 +745,12 @@ export const exampleIstHierarchy: IstNode = {
     {
       path: buildNodePath('Bonds'),
       label: 'Bonds',
-      ownValue: 300,
+      ownValue: 900,
       children: [
         {
           path: buildNodePath('Bonds', 'Government'),
           label: 'Government',
-          ownValue: 200,
+          ownValue: 400,
           children: [
             {
               path: buildNodePath('Bonds', 'Government', 'Short Duration'),
@@ -759,7 +763,7 @@ export const exampleIstHierarchy: IstNode = {
         {
           path: buildNodePath('Bonds', 'Corporate'),
           label: 'Corporate',
-          ownValue: 100,
+          ownValue: 200,
           children: [
             {
               path: buildNodePath('Bonds', 'Corporate', 'Investment Grade'),

@@ -30,6 +30,7 @@ Bei Konflikten zwischen Dokumenten gilt: **Eintragungsdatum im Protokoll + norma
 | 2026-07-02 | Scope/Governance | MVP 1.0 gilt als abgeschlossen, auch wenn vorgezogene Zusatzfeatures bereits enthalten sind | Abnahme erfolgt gegen den definierten MVP-Basisumfang; Extras sind nicht abnahmekritisch | Entschieden |
 | 2026-07-07 | Datenmodell/UX | SOLL-Eingabe ist pro Nicht-Root-Knoten zwischen `% vom Parent` und `% gesamt (absolut)` umschaltbar; Validierung bleibt hinweisend ohne Speichern zu blockieren | Erhoeht Bedienflexibilitaet, behaelt Rueckwaertskompatibilitaet (`targetPct`) und bleibt konsistent mit diagnostischer Freeness-Logik | Entschieden |
 | 2026-07-07 | Datenmodell | Root speichert keinen `targetPctOfParent`; Root wird ausschliesslich als fachlich fixer Gesamtanteil `100 %` behandelt | Root hat keinen Parent, dadurch weniger Modell-Sonderfaelle und klarere Semantik fuer Persistenz/Migration | Entschieden |
+| 2026-07-09 | Datenmodell/Visualisierung | IST-`ownValue` wird als Parent-Gesamtwert interpretiert; der direkt gehaltene Anteil ist abgeleitet (`max(parent - Summe(Kinder), 0)`) und wird nicht separat gespeichert | Verhindert statische Restwerte, haelt Tree-Details und Sunburst bei Kind-Updates konsistent; Overflow bleibt sichtbar, indem der Parent mindestens der Kinder-Summe entspricht | Entschieden |
 
 ## Hinweise zur Pflege
 

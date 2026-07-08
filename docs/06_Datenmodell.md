@@ -49,6 +49,7 @@ export interface IstNode extends PortfolioNodeBase<IstNode> {
 
 export interface IstComputedNode extends PortfolioNodeBase<IstComputedNode> {
   ownValue?: number;
+  directValue: number;
   nodeValue: number;
   pctTotal: number;
   pctOfParent?: number;
@@ -60,6 +61,9 @@ export interface IstComputedNode extends PortfolioNodeBase<IstComputedNode> {
 - `root` ist der feste technische Root-Pfad.
 - `uncategorized` ist der technische IST-Knoten für nicht zuordenbare Werte.
 - `targetPct?` und `ownValue?` sind absichtlich optional, damit unvollständige Eingaben importierbar bleiben.
+- Im IST wird `ownValue` als eingegebener Gesamtwert eines Knotens interpretiert (inklusive Kinder).
+- Der direkt gehaltene IST-Anteil wird berechnet: `directValue = max(ownValue - Summe(child.nodeValue), 0)`.
+- Der berechnete Knotenwert bleibt konsistent zu den Kindern: `nodeValue = max(ownValue, Summe(child.nodeValue))`.
 - `targetPctOfParent?` ist das primäre SOLL-Eingabefeld für Nicht-Root-Knoten.
 - `targetPct?` bleibt als rückwärtskompatibles, absolutes Fallback erhalten.
 - `lastEditedTargetField?` steuert, welches SOLL-Feld als Autoritaet fuer die Ableitung genutzt wird.

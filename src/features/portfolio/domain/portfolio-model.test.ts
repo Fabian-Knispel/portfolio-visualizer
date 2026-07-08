@@ -24,12 +24,12 @@ function createStandardIstTree(): IstNode {
   return {
     path: ROOT_NODE_PATH,
     label: 'Portfolio',
-    ownValue: 100,
+    ownValue: 220,
     children: [
       {
         path: 'root/Equity',
         label: 'Equity',
-        ownValue: 20,
+        ownValue: 40,
         children: [
           {
             path: 'root/ETF/Developed',
@@ -137,6 +137,86 @@ describe('portfolio percentage computation', () => {
     expect(usa.nodeValue).toBe(10);
     expect(usa.pctTotal).toBeCloseTo(10 / 220, 10);
     expect(usa.pctOfParent).toBeCloseTo(10 / 40, 10);
+  });
+
+  it('derives direct IST value from parent total minus children sum and updates with child changes', () => {
+    const before = computeIstPercentages(computeIstNodeValues({
+      path: ROOT_NODE_PATH,
+      label: 'Portfolio',
+      children: [
+        {
+          path: buildNodePath('Equity'),
+          label: 'Equity',
+          ownValue: 100,
+          children: [
+            {
+              path: buildNodePath('Equity', 'ETF'),
+              label: 'ETF',
+              ownValue: 40,
+              children: [],
+            },
+          ],
+        },
+      ],
+    }));
+
+    const after = computeIstPercentages(computeIstNodeValues({
+      path: ROOT_NODE_PATH,
+      label: 'Portfolio',
+      children: [
+        {
+          path: buildNodePath('Equity'),
+          label: 'Equity',
+          ownValue: 100,
+          children: [
+            {
+              path: buildNodePath('Equity', 'ETF'),
+              label: 'ETF',
+              ownValue: 70,
+              children: [],
+            },
+          ],
+        },
+      ],
+    }));
+
+    expect(before.children[0]?.directValue).toBe(60);
+    expect(after.children[0]?.directValue).toBe(30);
+    expect(before.children[0]?.nodeValue).toBe(100);
+    expect(after.children[0]?.nodeValue).toBe(100);
+  });
+
+  it('clamps derived direct IST value at zero and lets parent follow children sum on overflow', () => {
+    const computed = computeIstPercentages(computeIstNodeValues({
+      path: ROOT_NODE_PATH,
+      label: 'Portfolio',
+      children: [
+        {
+          path: buildNodePath('Equity'),
+          label: 'Equity',
+          ownValue: 100,
+          children: [
+            {
+              path: buildNodePath('Equity', 'USA'),
+              label: 'USA',
+              ownValue: 70,
+              children: [],
+            },
+            {
+              path: buildNodePath('Equity', 'Europe'),
+              label: 'Europe',
+              ownValue: 50,
+              children: [],
+            },
+          ],
+        },
+      ],
+    }));
+
+    const equity = computed.children[0];
+
+    expect(equity?.directValue).toBe(0);
+    expect(equity?.nodeValue).toBe(120);
   });
 
   it('computes reusable percentage values for root and child nodes', () => {

@@ -118,7 +118,7 @@ export function buildIstSunburstDatum(root: IstComputedNode | null): SunburstNod
 
   function transformNode(node: IstComputedNode): SunburstNodeDatum {
     const children = node.children.map(transformNode);
-    const ownSize = normalizeSize(node.ownValue);
+    const ownSize = normalizeSize(node.directValue);
 
     if (node.children.length > 0 && ownSize > 0) {
       children.push({
@@ -134,7 +134,7 @@ export function buildIstSunburstDatum(root: IstComputedNode | null): SunburstNod
     return {
       path: node.path,
       label: node.label,
-      size: node.children.length === 0 ? ownSize : 0,
+      size: node.children.length === 0 ? normalizeSize(node.nodeValue) : 0,
       children,
     };
   }
