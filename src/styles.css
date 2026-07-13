@@ -619,11 +619,6 @@ button {
   color: #eef2ff;
 }
 
-.button--saved {
-  background: #166534;
-  color: #dcfce7;
-}
-
 .button--ghost {
   background: rgba(99, 102, 241, 0.18);
   color: #c7d2fe;
