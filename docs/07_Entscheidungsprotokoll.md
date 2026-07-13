@@ -3,6 +3,13 @@
 Konsolidierte, chronologische Entscheidungshistorie des Projekts.  
 Bei Konflikten zwischen Dokumenten gilt: **Eintragungsdatum im Protokoll + normative Zieldokumente (01–06) sind maßgeblich.**
 
+## Hinweise zur Pflege
+
+- Jede neue Entscheidung genau **einmal** eintragen.
+- Datum im ISO-Format `YYYY-MM-DD`.
+- Entscheidungstext kurz und eindeutig.
+- Zu jeder Entscheidung das normative Zieldokument (01–06) zeitnah aktualisieren.
+
 ## Format
 
 | Datum | Phase | Entscheidung | Begründung | Status |
@@ -16,7 +23,7 @@ Bei Konflikten zwischen Dokumenten gilt: **Eintragungsdatum im Protokoll + norma
 | 2026-06-24 | Tech-Stack | Build-Tool: Vite | Schneller Dev-Server/HMR, einfacher TS-Workflow, stabiler Production-Build | Entschieden |
 | 2026-06-24 | Tech-Stack | Sprache: TypeScript | Typsicherheit, Wartbarkeit, robustere Refactorings | Entschieden |
 | 2026-06-24 | Tech-Stack | Visualisierung: D3.js (insb. Sunburst) | Hohe Flexibilität für hierarchische Visualisierungen und Interaktionen | Entschieden |
-| 2026-06-30 | Dokumentation | Dokumentenhierarchie präzisiert (00 Status, 01–06 normativ, 07 Historie, 08 Zwischenspeicher) | Konsistenz, klare Verbindlichkeit, konfliktfreie Fortschreibung | Entschieden |
+| 2026-06-30 | Dokumentation | Dokumentenhierarchie präzisiert (00 Status, 01–06 normativ, 07 Historie) | Konsistenz, klare Verbindlichkeit, konfliktfreie Fortschreibung | Entschieden |
 | 2026-06-30 | Datenmodell | Feature-nahes zentrales Modul mit festem Root-Pfad `root` | Konsistent mit Feature-based Architektur und stabiler Pfad-Identität | Entschieden |
 | 2026-06-30 | Persistenz | Nur fachliche Daten `sollRoot` und `istRoot` werden gespeichert; UI-Zustand bleibt abgeleitet | Minimiert Persistenzlast und verhindert unnötige Kopplung an die Darstellung | Entschieden |
 | 2026-06-30 | Store | Portfolio-Store lädt beim Initialisieren und persistiert jede fachliche Mutation unmittelbar | Garantiert Reload-Erhalt und hält die UI nur als Ableitung des fachlichen Zustands | Entschieden |
@@ -31,10 +38,3 @@ Bei Konflikten zwischen Dokumenten gilt: **Eintragungsdatum im Protokoll + norma
 | 2026-07-07 | Datenmodell/UX | SOLL-Eingabe ist pro Nicht-Root-Knoten zwischen `% vom Parent` und `% gesamt (absolut)` umschaltbar; Validierung bleibt hinweisend ohne Speichern zu blockieren | Erhoeht Bedienflexibilitaet, behaelt Rueckwaertskompatibilitaet (`targetPct`) und bleibt konsistent mit diagnostischer Freeness-Logik | Entschieden |
 | 2026-07-07 | Datenmodell | Root speichert keinen `targetPctOfParent`; Root wird ausschliesslich als fachlich fixer Gesamtanteil `100 %` behandelt | Root hat keinen Parent, dadurch weniger Modell-Sonderfaelle und klarere Semantik fuer Persistenz/Migration | Entschieden |
 | 2026-07-09 | Datenmodell/Visualisierung | IST-`ownValue` wird als Parent-Gesamtwert interpretiert; der direkt gehaltene Anteil ist abgeleitet (`max(parent - Summe(Kinder), 0)`) und wird nicht separat gespeichert | Verhindert statische Restwerte, haelt Tree-Details und Sunburst bei Kind-Updates konsistent; Overflow bleibt sichtbar, indem der Parent mindestens der Kinder-Summe entspricht | Entschieden |
-
-## Hinweise zur Pflege
-
-- Jede neue Entscheidung genau **einmal** eintragen.
-- Datum im ISO-Format `YYYY-MM-DD`.
-- Entscheidungstext kurz und eindeutig.
-- Zu jeder Entscheidung das normative Zieldokument (01–06) zeitnah aktualisieren.
