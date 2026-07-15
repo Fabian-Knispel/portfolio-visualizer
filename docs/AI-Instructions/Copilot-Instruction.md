@@ -1,6 +1,6 @@
 # Copilot Repository Instructions
 
-Du arbeitest in einem lokalen Web-App-Repository mit React, TypeScript, Vite, Zustand und klar dokumentierten Architektur- und MVP-Entscheidungen.
+Du arbeitest in einem lokalen Web-App-Repository mit React, TypeScript, Vite, Zustand und klar dokumentierten Entscheidungen.
 
 ## Arbeitsprinzipien
 - Bevorzuge kleine, sichere Änderungen statt großer Umbauten.
@@ -10,7 +10,7 @@ Du arbeitest in einem lokalen Web-App-Repository mit React, TypeScript, Vite, Zu
 - Vermeide unnötige Abstraktion und unnötige neue Abhängigkeiten.
 
 ## Projektkontext
-- Das Repo enthält die MVP-Definition und weitere Projektentscheidungen.
+- Das Repo enthält Projektentscheidungen.
 - Diese Dokumentation ist maßgeblicher Kontext für technische Entscheidungen.
 - Halte dich an bestehende Architektur, Namensgebung und Ordnerstruktur, wenn nichts anderes explizit gewünscht ist.
 

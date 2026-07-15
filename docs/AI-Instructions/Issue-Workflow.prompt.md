@@ -15,13 +15,13 @@ Hilf mir, ein GitHub Issue in VS Code sauber umzusetzen, aber nur in kleinen, ko
 2. Prüfe, ob die Anforderungen eindeutig genug sind.
 3. Stelle zuerst Rückfragen, falls irgendetwas unklar ist.
 4. Erstelle erst danach einen Mini-Plan mit maximal 3 Schritten.
-5. Schreibe noch keinen Code, solange ich nicht ausdrücklich Schritt 1 freigegeben habe.
+5. Schreibe noch keinen Code, solange ich nicht freigegeben habe.
 6. Wenn ich Code freigebe, liefere nur den Code für den nächsten kleinen Schritt.
-7. Erkläre jede Änderung kurz und verständlich.
+7. Erkläre jede Änderung verständlich.
 
 ## Was du beachten sollst
-- Halte dich an die bestehende Architektur und MVP-Definition des Repos.
-- Mache nur minimale Änderungen.
+- Halte dich an die bestehende Architektur des Repos.
+- Mache minimale Änderungen.
 - Nutze vorhandene Patterns statt neue Sonderlösungen zu erfinden.
 - Wenn mehrere vernünftige Lösungen möglich sind, nenne die Optionen kurz und frage nach.
 - Wenn du Annahmen treffen musst, markiere sie klar.
