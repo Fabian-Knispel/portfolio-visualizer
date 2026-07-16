@@ -191,4 +191,50 @@ describe('portfolio storage migration', () => {
     expect(crypto?.targetPctOfParent).toBeCloseTo(25, 10);
     expect(storage.writes).toBe(1);
   });
+
+  it('normalizes root label and root target percentage from legacy state', () => {
+    const storage = new CountingStorage();
+
+    storage.seed(
+      PORTFOLIO_STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        state: {
+          sollRoot: {
+            path: ROOT_NODE_PATH,
+            label: 'Invest',
+            targetPct: 40,
+            children: [
+              {
+                path: buildNodePath('Invest'),
+                label: 'Invest',
+                targetPctOfParent: 70,
+                children: [],
+              },
+            ],
+          },
+          istRoot: {
+            path: ROOT_NODE_PATH,
+            label: 'Invest',
+            children: [
+              {
+                path: buildNodePath('Invest'),
+                label: 'Invest',
+                ownValue: 1000,
+                children: [],
+              },
+            ],
+          },
+        },
+      } satisfies PortfolioStorageEnvelope)
+    );
+
+    const loaded = loadPortfolioStorageState(storage);
+
+    expect(loaded.error).toBeNull();
+    expect(loaded.state.sollRoot?.label).toBe('Portfolio');
+    expect(loaded.state.istRoot?.label).toBe('Portfolio');
+    expect(loaded.state.sollRoot?.targetPct).toBe(100);
+    expect(storage.writes).toBe(1);
+  });
 });

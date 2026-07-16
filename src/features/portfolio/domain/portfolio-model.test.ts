@@ -475,14 +475,12 @@ describe('compare rows', () => {
     const cash = rows.find((row) => row.path === buildNodePath('Cash'));
     const bonds = rows.find((row) => row.path === buildNodePath('Bonds'));
 
-    expect(rows[0].path).toBe(ROOT_NODE_PATH);
-    expect(rows[0].status).toBe('correct');
-    expect(rows[0].sollPctOfParent).toBeUndefined();
-    expect(rows[0].istPctOfParent).toBeUndefined();
+    expect(rows.some((row) => row.path === ROOT_NODE_PATH)).toBe(false);
+    expect(rows[0].path).toBe(buildNodePath('Equity'));
 
     expect(equity).toMatchObject({
       label: 'Equity',
-      depth: 1,
+      depth: 0,
       sollTargetPct: 0.6,
       sollPctOfParent: 60,
       status: 'overweighted',

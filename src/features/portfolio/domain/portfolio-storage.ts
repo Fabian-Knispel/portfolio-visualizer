@@ -1,6 +1,7 @@
 import { IstNode, SollNode } from './portfolio-model';
 
 const ROOT_NODE_PATH = 'root';
+const ROOT_NODE_LABEL = 'Portfolio';
 const HUNDRED = 100;
 
 export interface PortfolioStorageState {
@@ -189,20 +190,76 @@ function migrateSollNode(node: SollNode, parentAbsoluteTargetPct?: number): Soll
 }
 
 function migrateStorageState(state: PortfolioStorageState): { state: PortfolioStorageState; migrated: boolean } {
-  if (state.sollRoot === null) {
-    return { state, migrated: false };
+  let migrated = false;
+  let nextSollRoot = state.sollRoot;
+  let nextIstRoot = state.istRoot;
+
+  if (state.sollRoot !== null) {
+    const migratedSoll = migrateSollNode(state.sollRoot);
+    let normalizedSollRoot = migratedSoll.node;
+
+    if (normalizedSollRoot.path !== ROOT_NODE_PATH) {
+      normalizedSollRoot = {
+        ...normalizedSollRoot,
+        path: ROOT_NODE_PATH,
+      };
+      migrated = true;
+    }
+
+    if (normalizedSollRoot.label !== ROOT_NODE_LABEL) {
+      normalizedSollRoot = {
+        ...normalizedSollRoot,
+        label: ROOT_NODE_LABEL,
+      };
+      migrated = true;
+    }
+
+    if ((toFiniteNumber(normalizedSollRoot.targetPct) ?? HUNDRED) !== HUNDRED) {
+      normalizedSollRoot = {
+        ...normalizedSollRoot,
+        targetPct: HUNDRED,
+      };
+      migrated = true;
+    }
+
+    if (migratedSoll.migrated) {
+      migrated = true;
+    }
+
+    nextSollRoot = normalizedSollRoot;
   }
 
-  const migratedSoll = migrateSollNode(state.sollRoot);
+  if (state.istRoot !== null) {
+    let normalizedIstRoot = state.istRoot;
 
-  if (!migratedSoll.migrated) {
+    if (normalizedIstRoot.path !== ROOT_NODE_PATH) {
+      normalizedIstRoot = {
+        ...normalizedIstRoot,
+        path: ROOT_NODE_PATH,
+      };
+      migrated = true;
+    }
+
+    if (normalizedIstRoot.label !== ROOT_NODE_LABEL) {
+      normalizedIstRoot = {
+        ...normalizedIstRoot,
+        label: ROOT_NODE_LABEL,
+      };
+      migrated = true;
+    }
+
+    nextIstRoot = normalizedIstRoot;
+  }
+
+  if (!migrated) {
     return { state, migrated: false };
   }
 
   return {
     state: {
       ...state,
-      sollRoot: migratedSoll.node,
+      sollRoot: nextSollRoot,
+      istRoot: nextIstRoot,
     },
     migrated: true,
   };

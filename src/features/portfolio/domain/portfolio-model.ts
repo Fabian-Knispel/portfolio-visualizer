@@ -577,13 +577,14 @@ export function buildCompareRows(sollRoot: SollNode | null, istRoot: IstComputed
     ...istEntries
       .map((entry) => entry.node.path)
       .filter((path) => !sollMap.has(path)),
-  ];
+  ].filter((path) => !isRootNodePath(path));
 
   return orderedPaths.map((path) => {
     const sollEntry = sollMap.get(path);
     const istEntry = istMap.get(path);
     const label = sollEntry?.node.label ?? istEntry?.node.label ?? path;
-    const depth = sollEntry?.depth ?? istEntry?.depth ?? 0;
+    const rawDepth = sollEntry?.depth ?? istEntry?.depth ?? 0;
+    const depth = Math.max(rawDepth - 1, 0);
 
     if (sollEntry === undefined && istEntry !== undefined) {
       const istPct = istEntry.node.pctTotal;

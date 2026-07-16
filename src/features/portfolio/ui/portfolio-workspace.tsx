@@ -1007,7 +1007,7 @@ export function PortfolioWorkspace({
                 <label className="field">
                   <span>Label</span>
                   <input
-                    disabled={readOnlyMode}
+                    disabled={readOnlyMode || selectedNode === null || isRootNodePath(selectedNode.path)}
                     value={draft.label}
                     onChange={(event) => setDraft((previous) => ({ ...previous, label: event.target.value }))}
                     onKeyDown={(event) => { if (event.key === 'Enter') handleSave(); }}
