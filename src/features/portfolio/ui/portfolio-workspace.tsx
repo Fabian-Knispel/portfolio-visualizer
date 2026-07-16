@@ -753,8 +753,9 @@ export function PortfolioWorkspace({
     <div className="workspace-shell">
       <header className="workspace-header">
         <div>
-          <p className="workspace-kicker">Portfolio Visualizer</p>
-          <h1>Seitenbereich für die manuelle Hierarchiepflege</h1>
+          <p className="workspace-kicker"> </p>
+          <h1>Portfolio Visualizer</h1>
+          <div>Ein Tool zur Visualisierung und Planung der eigenen Anlagestrategie</div>
         </div>
         <div className="workspace-header__controls">
           <div className="mode-tabs" role="tablist" aria-label="Ansicht wählen">
@@ -841,11 +842,11 @@ export function PortfolioWorkspace({
                 <thead>
                   <tr>
                     <th>Struktur / Knoten</th>
-                    <th className="text-right">Soll gesamt</th>
-                    <th className="text-right">Soll / Parent</th>
-                    <th className="text-right">Ist gesamt</th>
-                    <th className="text-right">Ist / Parent</th>
-                    <th className="text-right">Delta (pp)</th>
+                    <th className="text-right">Soll</th>
+                    <th className="text-right">Ist</th>
+                    <th className="text-right">Differenz (pp)</th>
+                    <th className="text-center">???</th>
+                    <th className="text-right">Empfehlung?</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -865,7 +866,7 @@ export function PortfolioWorkspace({
                           </div>
                         </td>
                         <td className="text-right">{formatRatioPercent(row.sollTargetPct)}</td>
-                        <td className="text-right">{formatStoredPercent(row.sollPctOfParent)}</td>
+                        <td className="text-center">{formatStoredPercent(row.sollPctOfParent)}</td>
                         <td className="text-right">{formatRatioPercent(row.istPct)}</td>
                         <td className="text-right">{formatRatioPercent(row.istPctOfParent)}</td>
                         <td className="text-right">

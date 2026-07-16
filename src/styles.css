@@ -775,6 +775,7 @@ button {
 .compare-table td {
   padding: 8px 12px;
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 .compare-table__cell--label {
