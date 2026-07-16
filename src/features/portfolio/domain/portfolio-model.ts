@@ -52,6 +52,8 @@ export interface CompareResult {
 export interface CompareRow extends CompareResult {
   label: string;
   depth: number;
+  sollPctOfParent?: number;
+  istPctOfParent?: number;
 }
 
 export interface FreenessResult {
@@ -591,7 +593,9 @@ export function buildCompareRows(sollRoot: SollNode | null, istRoot: IstComputed
         label,
         depth,
         sollTargetPct: ZERO,
+        sollPctOfParent: undefined,
         istPct,
+        istPctOfParent: istEntry.node.pctOfParent,
         deltaPctPoints: istPct,
         status: 'extra_in_ist',
       };
@@ -605,6 +609,8 @@ export function buildCompareRows(sollRoot: SollNode | null, istRoot: IstComputed
       ...compare,
       label,
       depth,
+      sollPctOfParent: sollEntry?.node.targetPctOfParent,
+      istPctOfParent: istEntry?.node.pctOfParent,
     };
   });
 }

@@ -10,6 +10,7 @@ import {
   type NodePath,
   type PortfolioNodeBase,
   type SollNode,
+  buildCompareRows,
   buildNodePath,
   computeCompareStatus,
   computeFreenessStatus,
@@ -331,6 +332,11 @@ export function PortfolioWorkspace({
   const sunburstRoot = useMemo(
     () => buildSunburstDatumForMode(sunburstMode, snapshot.sollRoot, istComputedRoot),
     [istComputedRoot, snapshot.sollRoot, sunburstMode]
+  );
+
+  const compareRows = useMemo(
+    () => buildCompareRows(snapshot.sollRoot, istComputedRoot),
+    [istComputedRoot, snapshot.sollRoot]
   );
 
   const currentEntries = useMemo(() => collectTreeEntries(currentRoot), [currentRoot]);
@@ -759,57 +765,148 @@ export function PortfolioWorkspace({
         </div>
       </header>
 
-      <div className="workspace-body">
-        <section className="panel panel--tree">
-          <div className="panel__header">
-            <div>
-              <p className="panel__eyebrow">Baumansicht</p>
-              <h2>{treePanelTitle}</h2>
+      <div className={`workspace-body${activeViewMode === 'vergleich' ? ' workspace-body--vergleich' : ''}`}>
+        {activeViewMode === 'vergleich' ? (
+          <>
+            <section className="panel panel--tree">
+              <div className="panel__header">
+                <div>
+                  <p className="panel__eyebrow">Baumansicht</p>
+                  <h2>SOLL-PORTFOLIO</h2>
+                </div>
+              </div>
+              {snapshot.sollRoot === null ? (
+                <div className="empty-state"><p>Noch kein SOLL-Portfolio.</p></div>
+              ) : (
+                <ul className="tree-list tree-list--root">
+                  {snapshot.sollRoot.children.length === 0 ? <li className="tree-list__empty">Noch keine Kinder.</li> : null}
+                  {snapshot.sollRoot.children.map((child) => renderTreeNode(child as SollNode, 0))}
+                </ul>
+              )}
+            </section>
+            <section className="panel panel--tree">
+              <div className="panel__header">
+                <div>
+                  <p className="panel__eyebrow">Baumansicht</p>
+                  <h2>IST-PORTFOLIO</h2>
+                </div>
+              </div>
+              {snapshot.istRoot === null ? (
+                <div className="empty-state"><p>Noch kein IST-Portfolio.</p></div>
+              ) : (
+                <ul className="tree-list tree-list--root">
+                  {snapshot.istRoot.children.length === 0 ? <li className="tree-list__empty">Noch keine Kinder.</li> : null}
+                  {snapshot.istRoot.children.map((child) => renderTreeNode(child as IstNode, 0))}
+                </ul>
+              )}
+            </section>
+          </>
+        ) : (
+          <section className="panel panel--tree">
+            <div className="panel__header">
+              <div>
+                <p className="panel__eyebrow">Baumansicht</p>
+                <h2>{treePanelTitle}</h2>
+              </div>
+              <div className="panel__header-actions">
+                <button className="button button--primary" disabled={readOnlyMode || selectedNode === null} onClick={handleAddChild} type="button">
+                  + Hinzufügen
+                </button>
+              </div>
             </div>
-            <div className="panel__header-actions">
-              <button className="button button--primary" disabled={readOnlyMode || selectedNode === null} onClick={handleAddChild} type="button">
-                + Hinzufügen
-              </button>
-            </div>
-          </div>
 
-          {currentRoot === null ? (
-            <div className="empty-state">
-              <p>Es ist noch kein Portfolio angelegt.</p>
-            </div>
-          ) : (
-            <ul className="tree-list tree-list--root">
-              {currentRoot.children.length === 0 ? <li className="tree-list__empty">Noch keine Kinder angelegt.</li> : null}
-              {currentRoot.children.map((child) => renderTreeNode(child as SollNode | IstNode, 0))}
-            </ul>
-          )}
-        </section>
+            {currentRoot === null ? (
+              <div className="empty-state">
+                <p>Es ist noch kein Portfolio angelegt.</p>
+              </div>
+            ) : (
+              <ul className="tree-list tree-list--root">
+                {currentRoot.children.length === 0 ? <li className="tree-list__empty">Noch keine Kinder angelegt.</li> : null}
+                {currentRoot.children.map((child) => renderTreeNode(child as SollNode | IstNode, 0))}
+              </ul>
+            )}
+          </section>
+        )}
 
-        <section className="panel panel--sunburst">
-          <div className="panel__header">
-            <div>
-              <p className="panel__eyebrow">Sunburst</p>
-              <h2>SUNBURST</h2>
+        {activeViewMode === 'vergleich' ? (
+          <section className="panel panel--sunburst">
+            <div className="panel__header">
+              <div>
+                <p className="panel__eyebrow">Analyse</p>
+                <h2>SOLL VS. IST VERGLEICH</h2>
+              </div>
             </div>
-            <div className="panel__header-actions">
-              <button className="button button--ghost" disabled={currentRoot === null} onClick={toggleTreeCollapseAll} type="button">
-                {sunburstCollapseLabel}
-              </button>
+            <div className="compare-table-container">
+              <table className="compare-table">
+                <thead>
+                  <tr>
+                    <th>Struktur / Knoten</th>
+                    <th className="text-right">Soll gesamt</th>
+                    <th className="text-right">Soll / Parent</th>
+                    <th className="text-right">Ist gesamt</th>
+                    <th className="text-right">Ist / Parent</th>
+                    <th className="text-right">Delta (pp)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {compareRows.map((row) => {
+                    const indent = Math.min(row.depth * 16, 64);
+                    const deltaPrefix = row.deltaPctPoints >= 0 ? '+' : '';
+                    const deltaText = `${deltaPrefix}${trimTrailingZeros((row.deltaPctPoints * 100).toFixed(2))} pp`;
+
+                    return (
+                      <tr key={row.path}>
+                        <td>
+                          <div className="compare-table__cell--label">
+                            <span className="compare-table__indent" style={{ width: `${indent}px` }} />
+                            <span className="compare-table__status-dot" data-status={row.status} title={formatCompareStatus(row.status)} />
+                            <span>{row.label}</span>
+                            <span className="compare-table__status-text">({formatCompareStatus(row.status)})</span>
+                          </div>
+                        </td>
+                        <td className="text-right">{formatRatioPercent(row.sollTargetPct)}</td>
+                        <td className="text-right">{formatStoredPercent(row.sollPctOfParent)}</td>
+                        <td className="text-right">{formatRatioPercent(row.istPct)}</td>
+                        <td className="text-right">{formatRatioPercent(row.istPctOfParent)}</td>
+                        <td className="text-right">
+                          <span className="compare-table__delta" data-status={row.status}>
+                            {row.status === 'missing_in_ist' ? '— Fehlt' : row.status === 'extra_in_ist' ? '+ Extra' : deltaText}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-          </div>
+          </section>
+        ) : (
+          <section className="panel panel--sunburst">
+            <div className="panel__header">
+              <div>
+                <p className="panel__eyebrow">Sunburst</p>
+                <h2>SUNBURST</h2>
+              </div>
+              <div className="panel__header-actions">
+                <button className="button button--ghost" disabled={currentRoot === null} onClick={toggleTreeCollapseAll} type="button">
+                  {sunburstCollapseLabel}
+                </button>
+              </div>
+            </div>
 
-          <PortfolioSunburst
-            root={sunburstRoot}
-            title={sunburstMode.toUpperCase()}
-            hint={
-              sunburstMode === 'soll'
-                ? 'Für die Sunburst-Ansicht sind noch keine SOLL-Daten vorhanden.'
-                : 'Für die Sunburst-Ansicht sind noch keine IST-Daten vorhanden.'
-            }
-          />
-        </section>
+            <PortfolioSunburst
+              root={sunburstRoot}
+              title={sunburstMode.toUpperCase()}
+              hint={
+                sunburstMode === 'soll'
+                  ? 'Für die Sunburst-Ansicht sind noch keine SOLL-Daten vorhanden.'
+                  : 'Für die Sunburst-Ansicht sind noch keine IST-Daten vorhanden.'
+              }
+            />
+          </section>
+        )}
 
-        <aside className="panel panel--sidebar">
+        {activeViewMode !== 'vergleich' ? <aside className="panel panel--sidebar">
           <div className="panel__header panel__header--stacked">
             <div>
               <p className="panel__eyebrow">Seitenbereich</p>
@@ -885,26 +982,6 @@ export function PortfolioWorkspace({
                     <div className="detail-card__row">
                       <span>Anteil Parent</span>
                       <strong>{formatPercentageValue(selectedIstComputedNode.pctOfParent)}</strong>
-                    </div>
-                  </>
-                ) : null}
-                {activeViewMode === 'vergleich' ? (
-                  <>
-                    <div className="detail-card__row">
-                      <span>Status</span>
-                      <strong>{compareResult === null ? '—' : formatCompareStatus(compareResult.status)}</strong>
-                    </div>
-                    <div className="detail-card__row">
-                      <span>IST-Anteil</span>
-                      <strong>{formatPercentageValue(selectedIstComputedNode?.pctTotal)}</strong>
-                    </div>
-                    <div className="detail-card__row">
-                      <span>Abweichung</span>
-                      <strong>
-                        {compareResult === null
-                          ? '—'
-                          : `${compareResult.deltaPctPoints >= 0 ? '+' : ''}${trimTrailingZeros(compareResult.deltaPctPoints.toFixed(2))} pp`}
-                      </strong>
                     </div>
                   </>
                 ) : null}
@@ -1075,7 +1152,7 @@ export function PortfolioWorkspace({
               </form>
             </div>
           )}
-        </aside>
+        </aside> : null}
       </div>
     </div>
   );

@@ -84,7 +84,7 @@ export interface IstComputedNode extends PortfolioNodeBase<IstComputedNode> {
 ```ts
 export type FreenessStatus = 'correct' | 'free' | 'overallocated';
 
-export type CompareStatus = 'correct' | 'underweighted' | 'overweighted' | 'missing_in_ist';
+export type CompareStatus = 'correct' | 'underweighted' | 'overweighted' | 'missing_in_ist' | 'extra_in_ist';
 
 export interface CompareResult {
   path: NodePath;
@@ -92,6 +92,13 @@ export interface CompareResult {
   istPct: number;
   deltaPctPoints: number;
   status: CompareStatus;
+}
+
+export interface CompareRow extends CompareResult {
+  label: string;
+  depth: number;
+  sollPctOfParent?: number;
+  istPctOfParent?: number;
 }
 
 export interface FreenessResult {

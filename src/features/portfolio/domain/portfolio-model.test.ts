@@ -477,25 +477,33 @@ describe('compare rows', () => {
 
     expect(rows[0].path).toBe(ROOT_NODE_PATH);
     expect(rows[0].status).toBe('correct');
+    expect(rows[0].sollPctOfParent).toBeUndefined();
+    expect(rows[0].istPctOfParent).toBeUndefined();
 
     expect(equity).toMatchObject({
       label: 'Equity',
       depth: 1,
       sollTargetPct: 0.6,
+      sollPctOfParent: 60,
       status: 'overweighted',
     });
     expect(equity?.istPct).toBeCloseTo(0.7, 10);
+    expect(equity?.istPctOfParent).toBeCloseTo(0.7, 10);
 
     expect(cash).toMatchObject({
       status: 'missing_in_ist',
       sollTargetPct: 0.4,
+      sollPctOfParent: 40,
       istPct: 0,
+      istPctOfParent: undefined,
     });
 
     expect(bonds).toMatchObject({
       status: 'extra_in_ist',
       sollTargetPct: 0,
+      sollPctOfParent: undefined,
     });
     expect(bonds?.istPct).toBeCloseTo(0.3, 10);
+    expect(bonds?.istPctOfParent).toBeCloseTo(0.3, 10);
   });
 });
