@@ -842,11 +842,11 @@ export function PortfolioWorkspace({
                 <thead>
                   <tr>
                     <th>Struktur / Knoten</th>
-                    <th className="text-right">Soll</th>
-                    <th className="text-right">Ist</th>
-                    <th className="text-right">Differenz (pp)</th>
-                    <th className="text-center">???</th>
-                    <th className="text-right">Empfehlung?</th>
+                    <th className="text-right">Anteil gesamt Soll</th>
+                    <th className="text-right">Anteil Parent Soll</th>
+                    <th className="text-right">Anteil gesamt Ist</th>
+                    <th className="text-right">Anteil Parent Ist</th>
+                    <th className="text-right">Abweichung (pp)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -866,7 +866,7 @@ export function PortfolioWorkspace({
                           </div>
                         </td>
                         <td className="text-right">{formatRatioPercent(row.sollTargetPct)}</td>
-                        <td className="text-center">{formatStoredPercent(row.sollPctOfParent)}</td>
+                        <td className="text-right">{formatStoredPercent(row.sollPctOfParent)}</td>
                         <td className="text-right">{formatRatioPercent(row.istPct)}</td>
                         <td className="text-right">{formatRatioPercent(row.istPctOfParent)}</td>
                         <td className="text-right">
