@@ -300,6 +300,7 @@ export function PortfolioWorkspace({
   });
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [renameError, setRenameError] = useState<string | null>(null);
+  const [childPathError, setChildPathError] = useState<string | null>(null);
 
   useEffect(() => {
     if (snapshot.sollRoot === null) {
@@ -677,7 +678,14 @@ export function PortfolioWorkspace({
       return;
     }
 
-    const childPath = createUniqueChildPath(selectedNode.path, childLabel, selectedNode.children.map((child) => child.path));
+    const childPath = buildChildPath(selectedNode.path, childLabel);
+    const childExists = selectedNode.children.some((child) => child.path === childPath);
+
+    if (childExists) {
+      setChildPathError(`Ein Kind mit dem Pfad '${childPath}' existiert bereits.`);
+      return;
+    }
+
     let nextSnapshot: PortfolioStoreSnapshot;
 
     if (activeViewMode === 'soll') {
@@ -710,6 +718,7 @@ export function PortfolioWorkspace({
       setSavedAt(Date.now());
     }
 
+    setChildPathError(null);
     setDraft((previous) => ({
       ...previous,
       childLabel: '',
@@ -1133,10 +1142,11 @@ export function PortfolioWorkspace({
                     ref={childInputRef}
                     disabled={readOnlyMode}
                     value={draft.childLabel}
-                    onChange={(event) => setDraft((previous) => ({ ...previous, childLabel: event.target.value }))}
+                    onChange={(event) => { setChildPathError(null); setDraft((previous) => ({ ...previous, childLabel: event.target.value })); }}
                     onKeyDown={(event) => { if (event.key === 'Enter') handleAddChild(); }}
                     placeholder="z. B. USA"
                   />
+                  {childPathError !== null ? <p className="field__error" role="alert">{childPathError}</p> : null}
                 </label>
 
                 <label className="field">
