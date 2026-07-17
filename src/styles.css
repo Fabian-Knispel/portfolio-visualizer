@@ -169,6 +169,11 @@ button {
   top: 14px;
 }
 
+.panel--sidebar .panel__header h2 {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .panel__header {
   display: flex;
   justify-content: space-between;
@@ -508,6 +513,7 @@ button {
 .sidebar-stack {
   display: grid;
   gap: 12px;
+  min-width: 0;
 }
 
 .detail-card,
@@ -516,6 +522,7 @@ button {
   border: 1px solid var(--line);
   background: rgba(32, 47, 79, 0.9);
   padding: 14px;
+  overflow: hidden;
 }
 
 .detail-card__row {
@@ -532,13 +539,18 @@ button {
 }
 
 .detail-card__row span {
+  flex-shrink: 0;
+  white-space: nowrap;
   color: var(--text-muted);
   font-size: 0.85rem;
 }
 
 .detail-card__row strong {
+  min-width: 0;
   text-align: right;
   color: var(--text);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .form-card__header {
