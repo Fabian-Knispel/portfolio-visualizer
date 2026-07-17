@@ -5,6 +5,7 @@ import {
   appendNodeToTree,
   moveNodeInTree,
   removeNodeFromTree,
+  renameNodeInTree,
   updateNodeInTree,
 } from '../domain/portfolio-model';
 import {
@@ -21,6 +22,11 @@ export interface PortfolioStoreSnapshot extends PortfolioStorageState {
   saveError: string | null;
 }
 
+export interface RenameResult {
+  snapshot: PortfolioStoreSnapshot;
+  newPath: NodePath | null;
+}
+
 export type PortfolioStoreListener = (state: PortfolioStoreSnapshot) => void;
 
 export interface PortfolioStore {
@@ -35,6 +41,8 @@ export interface PortfolioStore {
   appendIstNode(parentPath: NodePath, childNode: IstNode): PortfolioStoreSnapshot;
   moveSollNode(path: NodePath, newParentPath: NodePath): PortfolioStoreSnapshot;
   moveIstNode(path: NodePath, newParentPath: NodePath): PortfolioStoreSnapshot;
+  renameSollNode(oldPath: NodePath, newLabel: string): RenameResult;
+  renameIstNode(oldPath: NodePath, newLabel: string): RenameResult;
   removeSollNode(path: NodePath): PortfolioStoreSnapshot;
   removeIstNode(path: NodePath): PortfolioStoreSnapshot;
   replaceState(state: PortfolioStorageState): PortfolioStoreSnapshot;
@@ -183,6 +191,46 @@ export function createPortfolioStore(
         ...currentState,
         istRoot: moveNodeInTree(currentState.istRoot, path, newParentPath),
       });
+    },
+
+    renameSollNode(oldPath: NodePath, newLabel: string) {
+      if (currentState.sollRoot === null) {
+        return { snapshot: emit(), newPath: null };
+      }
+
+      const result = renameNodeInTree(currentState.sollRoot, oldPath, newLabel);
+
+      if (result.newPath === null) {
+        return { snapshot: emit(), newPath: null };
+      }
+
+      return {
+        snapshot: setCurrentState({
+          ...currentState,
+          sollRoot: result.tree,
+        }),
+        newPath: result.newPath,
+      };
+    },
+
+    renameIstNode(oldPath: NodePath, newLabel: string) {
+      if (currentState.istRoot === null) {
+        return { snapshot: emit(), newPath: null };
+      }
+
+      const result = renameNodeInTree(currentState.istRoot, oldPath, newLabel);
+
+      if (result.newPath === null) {
+        return { snapshot: emit(), newPath: null };
+      }
+
+      return {
+        snapshot: setCurrentState({
+          ...currentState,
+          istRoot: result.tree,
+        }),
+        newPath: result.newPath,
+      };
     },
 
     removeSollNode(path: NodePath) {

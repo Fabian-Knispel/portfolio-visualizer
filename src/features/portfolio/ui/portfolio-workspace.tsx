@@ -299,6 +299,7 @@ export function PortfolioWorkspace({
     childNumericValue: '',
   });
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [renameError, setRenameError] = useState<string | null>(null);
 
   useEffect(() => {
     if (snapshot.sollRoot === null) {
@@ -605,6 +606,23 @@ export function PortfolioWorkspace({
       nextPath = movedExists ? movedNodePath : selectedNode.path;
     }
 
+    const labelChanged = nextLabel !== selectedNode.label;
+
+    if (labelChanged && !isRootNodePath(nextPath)) {
+      const renameResult = activeViewMode === 'soll'
+        ? portfolioStore.renameSollNode(nextPath, nextLabel)
+        : portfolioStore.renameIstNode(nextPath, nextLabel);
+
+      if (renameResult.newPath === null) {
+        const intendedPath = buildChildPath(getParentPath(nextPath), nextLabel);
+        setRenameError(`Ein Knoten mit dem Pfad '${intendedPath}' existiert bereits.`);
+        return;
+      }
+
+      nextSnapshot = renameResult.snapshot;
+      nextPath = renameResult.newPath;
+    }
+
     if (activeViewMode === 'soll') {
       const isRoot = isRootNodePath(nextPath);
 
@@ -635,6 +653,7 @@ export function PortfolioWorkspace({
       }));
     }
 
+    setRenameError(null);
     updateSelectedPath(nextPath);
 
     if (nextSnapshot.saveError === null) {
@@ -1010,10 +1029,11 @@ export function PortfolioWorkspace({
                   <input
                     disabled={readOnlyMode || selectedNode === null || isRootNodePath(selectedNode.path)}
                     value={draft.label}
-                    onChange={(event) => setDraft((previous) => ({ ...previous, label: event.target.value }))}
+                    onChange={(event) => { setRenameError(null); setDraft((previous) => ({ ...previous, label: event.target.value })); }}
                     onKeyDown={(event) => { if (event.key === 'Enter') handleSave(); }}
                     placeholder="Knotenname"
                   />
+                  {renameError !== null ? <p className="field__error" role="alert">{renameError}</p> : null}
                 </label>
 
                 <label className="field">

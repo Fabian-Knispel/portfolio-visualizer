@@ -17,6 +17,7 @@ import {
   ROOT_NODE_PATH,
   moveNodeInTree,
   removeNodeFromTree,
+  renameNodeInTree,
   updateNodeInTree,
 } from './portfolio-model';
 
@@ -404,6 +405,63 @@ describe('tree operations', () => {
 
     expect(findNodeByPath(moved, buildNodePath('Developed'))).not.toBeNull();
     expect(findNodeByPath(moved, 'root/ETF/Developed')).toBeNull();
+  });
+
+  it('renames a node and updates its path while preserving children', () => {
+    const root = createSollTree();
+    const result = renameNodeInTree(root, buildNodePath('Equity'), 'Aktien');
+
+    expect(result.newPath).toBe(buildNodePath('Aktien'));
+    expect(findNodeByPath(result.tree, buildNodePath('Aktien'))?.label).toBe('Aktien');
+    expect(findNodeByPath(result.tree, buildNodePath('Equity'))).toBeNull();
+  });
+
+  it('rebases child paths when renaming a parent node', () => {
+    const root = createSollTree();
+    const result = renameNodeInTree(root, buildNodePath('Equity'), 'Aktien');
+
+    expect(findNodeByPath(result.tree, buildNodePath('Aktien', 'USA'))?.label).toBe('USA');
+    expect(findNodeByPath(result.tree, buildNodePath('Equity', 'USA'))).toBeNull();
+  });
+
+  it('returns null newPath and unchanged tree for root rename attempt', () => {
+    const root = createSollTree();
+    const result = renameNodeInTree(root, ROOT_NODE_PATH, 'NeuerName');
+
+    expect(result.newPath).toBeNull();
+    expect(result.tree).toBe(root);
+  });
+
+  it('returns null newPath for missing path', () => {
+    const root = createSollTree();
+    const result = renameNodeInTree(root, buildNodePath('Missing'), 'New');
+
+    expect(result.newPath).toBeNull();
+    expect(result.tree).toBe(root);
+  });
+
+  it('returns null newPath when new label would cause a collision', () => {
+    const root = createSollTree();
+    const result = renameNodeInTree(root, buildNodePath('Cash'), 'Equity');
+
+    expect(result.newPath).toBeNull();
+    expect(result.tree).toBe(root);
+  });
+
+  it('returns null newPath for empty label', () => {
+    const root = createSollTree();
+    const result = renameNodeInTree(root, buildNodePath('Equity'), '  ');
+
+    expect(result.newPath).toBeNull();
+    expect(result.tree).toBe(root);
+  });
+
+  it('does nothing when label stays the same', () => {
+    const root = createSollTree();
+    const result = renameNodeInTree(root, buildNodePath('Equity'), 'Equity');
+
+    expect(result.newPath).toBeNull();
+    expect(result.tree).toBe(root);
   });
 });
 

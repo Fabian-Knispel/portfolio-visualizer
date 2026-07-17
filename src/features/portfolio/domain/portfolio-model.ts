@@ -459,6 +459,60 @@ export function moveNodeInTree<TNode extends PortfolioNodeBase<TNode>>(
   return appendNodeToTree(treeWithoutNode, newParentPath, rebasedNodeToMove);
 }
 
+export interface RenameResult<TNode> {
+  tree: TNode;
+  newPath: NodePath | null;
+}
+
+export function renameNodeInTree<TNode extends PortfolioNodeBase<TNode>>(
+  root: TNode,
+  oldPath: NodePath,
+  newLabel: string
+): RenameResult<TNode> {
+  if (isRootNodePath(oldPath)) {
+    return { tree: root, newPath: null };
+  }
+
+  const nodeToRename = findNodeInTree(root, oldPath);
+
+  if (nodeToRename === null) {
+    return { tree: root, newPath: null };
+  }
+
+  const trimmedLabel = newLabel.trim();
+
+  if (trimmedLabel.length === 0) {
+    return { tree: root, newPath: null };
+  }
+
+  const oldSegments = oldPath.split('/');
+  const parentPath = oldSegments.slice(0, -1).join('/') || ROOT_NODE_PATH;
+  const newPath = parentPath === ROOT_NODE_PATH
+    ? buildNodePath(trimmedLabel)
+    : `${parentPath}/${trimmedLabel}`;
+
+  if (newPath === oldPath) {
+    return { tree: root, newPath: null };
+  }
+
+  const treeWithoutNode = removeNodeFromTree(root, oldPath);
+
+  if (findNodeInTree(treeWithoutNode, newPath) !== null) {
+    return { tree: root, newPath: null };
+  }
+
+  const renamedNode = rebaseSubtreePaths(
+    { ...nodeToRename, label: trimmedLabel } as TNode,
+    oldPath,
+    newPath
+  );
+
+  return {
+    tree: appendNodeToTree(treeWithoutNode, parentPath, renamedNode),
+    newPath,
+  };
+}
+
 export function computeIstNodeValues(root: IstNode): IstComputedNode {
   return computeIstNodeValuesInternal(root);
 }
